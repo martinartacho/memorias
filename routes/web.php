@@ -17,3 +17,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/narraciones/{id}', [NarracionController::class, 'update'])->name('narraciones.update');
     Route::delete('/narraciones/{id}', [NarracionController::class, 'destroy'])->name('narraciones.destroy');
 });
+
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
