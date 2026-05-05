@@ -1,0 +1,83 @@
+@extends('layouts.literario')
+
+@section('title', $narracion->titulo . ' - Memorias sin orden')
+
+@section('content')
+<main class="container">
+  <div class="featured">
+    <div class="featured-meta">
+      <div class="section-label">Narración</div>
+      <div class="featured-number">{{ str_pad(rand(1, 99), 2, '0', STR_PAD_LEFT) }}</div>
+      <div class="featured-category">Narración · {{ $narracion->fecha_publicacion->format('Y') }}</div>
+    </div>
+    <div class="featured-divider"></div>
+    <div class="featured-text">
+      <div class="featured-author">Publicado · {{ $narracion->fecha_publicacion->format('F Y') }}</div>
+      <h2>{{ $narracion->titulo }}</h2>
+      <div class="modal-body">
+        @php
+            $paragraphs = preg_split('/\n\n+/', $narracion->contenido);
+            $first_paragraph = true;
+        @endphp
+        @foreach($paragraphs as $paragraph)
+            @if(trim($paragraph))
+                @if($first_paragraph)
+                    <p class="dropcap">{!! nl2br(e($paragraph)) !!}</p>
+                    <?php $first_paragraph = false; ?>
+                @else
+                    <p>{!! nl2br(e($paragraph)) !!}</p>
+                @endif
+            @endif
+        @endforeach
+      </div>
+      
+      <div class="mt-8 flex items-center justify-between">
+        <a href="{{ route('narraciones.index') }}" class="read-more">← Volver a todas las narraciones</a>
+        <div class="flex space-x-4">
+            <!-- Share Button (placeholder) -->
+            <button class="read-more" title="Compartir" onclick="alert('Función de compartir próximamente')">
+                Compartir →
+            </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Stories -->
+  <div class="grid-label">
+    Otras memorias <span>Explora más historias</span>
+  </div>
+
+  <div class="stories-grid">
+    @php
+        $related = \App\Models\Narracion::where('id', '!=', $narracion->id)
+            ->publicado()
+            ->orderByFecha()
+            ->take(3)
+            ->get();
+    @endphp
+    @foreach($related as $key => $story)
+        <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $story->slug) }}'">
+          <div class="card-num">{{ str_pad($key + 1, 2, '0', STR_PAD_LEFT) }}</div>
+          <div class="card-tag">Narración</div>
+          <div class="card-title">{{ $story->titulo }}</div>
+          <div class="card-author">{{ $story->fecha_publicacion->format('F Y') }}</div>
+          <p class="card-excerpt">{!! Str::limit(strip_tags($story->contenido), 120) !!}</p>
+        </div>
+    @endforeach
+    
+    @if($related->count() < 3)
+        @for($i = $related->count(); $i < 3; $i++)
+            <div class="story-card opacity-50">
+              <div class="card-num">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</div>
+              <div class="card-tag">Próximamente</div>
+              <div class="card-title">Nueva historia</div>
+              <div class="card-author">En construcción</div>
+              <p class="card-excerpt">Pronto podrás disfrutar de nuevas narraciones...</p>
+            </div>
+        @endfor
+    @endif
+  </div>
+
+</main>
+@endsection
