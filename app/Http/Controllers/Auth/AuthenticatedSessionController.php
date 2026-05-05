@@ -24,20 +24,25 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        \Log::info('Login attempt', ['email' => $request->email]);
-        
-        $request->authenticate();
-        
-        \Log::info('Authentication successful', ['user_id' => auth()->id()]);
+        try {
+            \Log::info('Login attempt', ['email' => $request->email]);
+            
+            $request->authenticate();
+            
+            \Log::info('Authentication successful', ['user_id' => auth()->id()]);
 
-        $request->session()->regenerate();
-        
-        \Log::info('Session regenerated', ['session_id' => session()->getId()]);
-        
-        $redirect = redirect()->intended(route('admin.narraciones.index', absolute: false));
-        \Log::info('Redirecting to', ['route' => 'admin.narraciones.index']);
-        
-        return $redirect;
+            $request->session()->regenerate();
+            
+            \Log::info('Session regenerated', ['session_id' => session()->getId()]);
+            
+            $redirect = redirect()->intended(route('admin.narraciones.index', absolute: false));
+            \Log::info('Redirecting to', ['route' => 'admin.narraciones.index']);
+            
+            return $redirect;
+        } catch (\Exception $e) {
+            \Log::error('Login error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            throw $e;
+        }
     }
 
     /**
