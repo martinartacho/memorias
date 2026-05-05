@@ -68,4 +68,14 @@ class RegisterController extends Controller
             'role' => 'lector', // Rol por defecto
         ]);
     }
+
+    /**
+     * Show the application registration form.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function showRegistrationForm()
+    {
+        return view('auth.register-literario');
+    }
 }
