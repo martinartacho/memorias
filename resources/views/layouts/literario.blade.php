@@ -448,7 +448,7 @@
   <ul>
     <li><a href="{{ route('home') }}" class="{{ request()->is('/') ? 'active' : '' }}">Inicio</a></li>
     <li><a href="{{ route('narraciones.index') }}" class="{{ request()->is('narraciones*') ? 'active' : '' }}">Narraciones</a></li>
-    @auth
+    {{-- @auth
       <li><a href="{{ route('admin.narraciones.index') }}" class="{{ request()->is('admin*') ? 'active' : '' }}">Administrar</a></li>
       <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Cerrar sesión</a></li>
       <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
@@ -456,7 +456,7 @@
       </form>
     @else
       <li><a href="{{ route('login') }}">Iniciar sesión</a></li>
-    @endauth
+    @endauth --}}
   </ul>
 </nav>
 

@@ -11,7 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->web(append: [
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
