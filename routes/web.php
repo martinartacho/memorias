@@ -8,8 +8,16 @@ Route::get('/', [NarracionController::class, 'index'])->name('home');
 Route::get('/narraciones', [NarracionController::class, 'index'])->name('narraciones.index');
 Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('narraciones.show');
 
-// Rutas de administración (temporalmente sin protección)
-Route::prefix('admin')->name('admin.')->group(function () {
+// Rutas de autenticación
+Auth::routes();
+
+// Dashboard para usuarios autenticados
+Route::get('/dashboard', function () {
+    return view('dashboard-literario');
+})->middleware('auth')->name('dashboard');
+
+// Rutas de administración (protegidas)
+Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/narraciones', [NarracionController::class, 'adminIndex'])->name('narraciones.index');
     Route::get('/narraciones/create', [NarracionController::class, 'create'])->name('narraciones.create');
     Route::post('/narraciones', [NarracionController::class, 'store'])->name('narraciones.store');
@@ -17,7 +25,3 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/narraciones/{id}', [NarracionController::class, 'update'])->name('narraciones.update');
     Route::delete('/narraciones/{id}', [NarracionController::class, 'destroy'])->name('narraciones.destroy');
 });
-
-Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
