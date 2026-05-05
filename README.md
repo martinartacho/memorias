@@ -74,7 +74,7 @@
    php artisan key:generate
    ```
 
-5. **Configurar base de datos**
+5. Configurar base de datos
    ```bash
    # Editar .env con tus credenciales de MySQL
    DB_CONNECTION=mysql
@@ -82,10 +82,10 @@
    DB_PORT=3306
    DB_DATABASE=memorias
    DB_USERNAME=tu_usuario
-   DB_PASSWORD=tu_contraseña
+   DB_PASSWORD=tu_contraseña_segura
    ```
 
-6. **Ejecutar migraciones y seeders**
+6. Ejecutar migraciones y seeders
    ```bash
    php artisan migrate
    php artisan db:seed
@@ -102,8 +102,8 @@
    ```
 
 ### 🔑 **Credenciales de Administración**
-- **Email**: `hola@hartacho.com`
-- **Contraseña**: La definida en `SEEDER_ADMIN_PASSWORD` (por defecto: `password`)
+- **Email**: Configurar en `SEEDER_ADMIN_EMAIL` en `.env`
+- **Contraseña**: Configurar en `SEEDER_ADMIN_PASSWORD` en `.env`
 
 ---
 
@@ -133,7 +133,7 @@
    DB_HOST=localhost
    DB_DATABASE=nombre_db_hartacho
    DB_USERNAME=usuario_db
-   DB_PASSWORD=contraseña_db
+   DB_PASSWORD=tu_contraseña_segura
    
    MAIL_MAILER=smtp
    MAIL_HOST=smtp.hartacho.com
@@ -281,7 +281,7 @@ MAIL_MAILER=smtp
 MAIL_HOST=tu-servidor-smtp
 MAIL_PORT=587
 MAIL_USERNAME=tu-email@hartacho.com
-MAIL_PASSWORD=tu-contraseña
+MAIL_PASSWORD=tu_contraseña_email
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=noreply@hartacho.com
 MAIL_FROM_NAME="Memorias sin orden"
@@ -354,7 +354,6 @@ Este proyecto está bajo la Licencia MIT. Ver archivo [LICENSE](LICENSE) para m�
 
 ## 📞 **Soporte**
 
-- **Email**: hola@hartacho.com
 - **Web**: https://hartacho.com
 - **GitHub**: https://github.com/martinartacho/memorias
 
