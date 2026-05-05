@@ -24,11 +24,20 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        \Log::info('Login attempt', ['email' => $request->email]);
+        
         $request->authenticate();
+        
+        \Log::info('Authentication successful', ['user_id' => auth()->id()]);
 
         $request->session()->regenerate();
-
-        return redirect()->intended(route('admin.narraciones.index', absolute: false));
+        
+        \Log::info('Session regenerated', ['session_id' => session()->getId()]);
+        
+        $redirect = redirect()->intended(route('admin.narraciones.index', absolute: false));
+        \Log::info('Redirecting to', ['route' => 'admin.narraciones.index']);
+        
+        return $redirect;
     }
 
     /**
