@@ -40,17 +40,28 @@ class LoginRequest extends FormRequest
      */
     public function authenticate(): void
     {
-        $this->ensureIsNotRateLimited();
+        try {
+            \Log::info('LoginRequest: Starting authentication', ['email' => $this->email]);
+            
+            $this->ensureIsNotRateLimited();
+            
+            \Log::info('LoginRequest: Rate limit check passed');
+            
+            if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+                \Log::info('LoginRequest: Authentication failed');
+                RateLimiter::hit($this->throttleKey());
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
-
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+                throw ValidationException::withMessages([
+                    'email' => trans('auth.failed'),
+                ]);
+            }
+            
+            \Log::info('LoginRequest: Authentication successful');
+            RateLimiter::clear($this->throttleKey());
+        } catch (\Exception $e) {
+            \Log::error('LoginRequest: Exception', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            throw $e;
         }
-
-        RateLimiter::clear($this->throttleKey());
     }
 
     /**
@@ -60,20 +71,30 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
-            return;
+        try {
+            \Log::info('LoginRequest: Checking rate limit', ['key' => $this->throttleKey()]);
+            
+            if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+                \Log::info('LoginRequest: Rate limit OK');
+                return;
+            }
+
+            \Log::info('LoginRequest: Rate limit exceeded', ['attempts' => RateLimiter::attempts($this->throttleKey())]);
+            
+            event(new Lockout($this));
+
+            $seconds = RateLimiter::availableIn($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.throttle', [
+                    'seconds' => $seconds,
+                    'minutes' => ceil($seconds / 60),
+                ]),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('LoginRequest: Rate limit exception', ['error' => $e->getMessage()]);
+            throw $e;
         }
-
-        event(new Lockout($this));
-
-        $seconds = RateLimiter::availableIn($this->throttleKey());
-
-        throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
-        ]);
     }
 
     /**
