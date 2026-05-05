@@ -1,5 +1,12 @@
 @extends('layouts.literario')
 
+@php
+    // Compartir variables de error para vistas de auth
+    if (!isset($errors)) {
+        $errors = view()->shared('errors', session()->get('errors', new \Illuminate\Support\ViewErrorBag));
+    }
+@endphp
+
 @section('content')
 <main class="container">
   <div class="max-w-md mx-auto">
