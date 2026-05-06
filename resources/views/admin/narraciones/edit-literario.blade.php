@@ -21,7 +21,7 @@
 
   <!-- Form -->
   <div class="bg-white rounded-lg border border-stone-300 overflow-hidden">
-    <form id="edit-form" action="{{ route('admin.narraciones.update', $narracion->id) }}" method="POST">
+    <form id="edit-form" action="{{ route('admin.narraciones.update', $narracion->slug) }}" method="POST">
       @csrf
       @method('PUT')
       
@@ -139,16 +139,6 @@
                 Ver Publicada
               </a>
             @endif
-            <form action="{{ route('admin.narraciones.destroy', $narracion->id) }}" 
-                  method="POST" class="inline">
-              @csrf
-              @method('DELETE')
-              <button type="submit" 
-                      class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-red-600 bg-white border border-red-300 hover:bg-red-50 transition-colors"
-                      onclick="return confirm('¿Estás seguro de eliminar esta narración?')">
-                Eliminar
-              </button>
-            </form>
           </div>
           <div class="space-x-4">
             <a href="{{ route('admin.narraciones.index') }}" 
@@ -156,7 +146,6 @@
               Cancelar
             </a>
             <button type="submit" 
-                    form="edit-form"
                     class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-700 hover:bg-stone-600 transition-colors">
               Actualizar
             </button>
@@ -186,6 +175,14 @@ document.addEventListener('DOMContentLoaded', function() {
             previewDate.textContent = date.toLocaleDateString('es-ES', options);
         }
     }
+
+    // Log para detectar envío del formulario
+    document.getElementById('edit-form').addEventListener('submit', function(e) {
+        console.log('=== FORMULARIO EDIT ENVIADO ===');
+        console.log('Action:', this.action);
+        console.log('Method:', this.method);
+        console.log('FormData:', new FormData(this));
+    });
 
     tituloInput.addEventListener('input', updatePreview);
     contenidoInput.addEventListener('input', updatePreview);

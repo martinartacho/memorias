@@ -58,15 +58,22 @@ class NarracionController extends Controller
             ->with('success', 'Narración creada exitosamente.');
     }
 
-    public function edit($id)
+    public function edit($slug)
     {
-        $narracion = Narracion::findOrFail($id);
+        $narracion = Narracion::where('slug', $slug)->firstOrFail();
         return view('admin.narraciones.edit-literario', compact('narracion'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
-        $narracion = Narracion::findOrFail($id);
+        \Log::info('=== INICIO UPDATE ===');
+        \Log::info('Ruta actual: ' . $request->path());
+        \Log::info('Método HTTP: ' . $request->method());
+        \Log::info('Slug recibido: ' . $slug);
+        \Log::info('Datos del request:', $request->all());
+        
+        $narracion = Narracion::where('slug', $slug)->firstOrFail();
+        \Log::info('Narración encontrada:', ['id' => $narracion->id, 'slug' => $narracion->slug, 'titulo' => $narracion->titulo]);
 
         $request->validate([
             'titulo' => 'required|string|max:255',
@@ -75,22 +82,58 @@ class NarracionController extends Controller
             'estado' => 'required|in:borrador,publicado',
         ]);
 
-        $narracion->update([
+        \Log::info('Validación pasada');
+
+        $updateData = [
             'titulo' => $request->titulo,
             'contenido' => $request->contenido,
-            'slug' => Str::slug($request->titulo) . '-' . time(),
             'fecha_publicacion' => $request->fecha_publicacion,
             'estado' => $request->estado,
-        ]);
+        ];
+        
+        \Log::info('Datos para actualizar:', $updateData);
+        
+        $result = $narracion->update($updateData);
+        \Log::info('Resultado de update: ' . $result);
+        \Log::info('Narración después de update:', ['id' => $narracion->id, 'slug' => $narracion->fresh()->slug, 'titulo' => $narracion->fresh()->titulo]);
+
+        \Log::info('=== FIN UPDATE ===');
 
         return redirect()->route('admin.narraciones.index')
             ->with('success', 'Narración actualizada exitosamente.');
     }
 
-    public function destroy($id)
+    public function destroy($slug)
     {
-        $narracion = Narracion::findOrFail($id);
-        $narracion->delete();
+        \Log::info('=== INICIO DESTROY ===');
+        \Log::info('Slug recibido para eliminar: ' . $slug);
+        
+        $narracion = Narracion::where('slug', $slug)->firstOrFail();
+        \Log::info('Narración a eliminar:', ['id' => $narracion->id, 'slug' => $narracion->slug, 'titulo' => $narracion->titulo]);
+        
+        // Primera confirmación: verificar que el slug existe
+        if (!$narracion) {
+            \Log::info('Narración no encontrada');
+            return redirect()->route('admin.narraciones.index')
+                ->with('error', 'Narración no encontrada.');
+        }
+        
+        \Log::info('Narración verificada, solicitando confirmación...');
+        
+        // Segunda confirmación: verificar que el usuario realmente quiere eliminar
+        $confirmation = request('confirmar_eliminacion');
+        if ($confirmation !== 'ELIMINAR_' . $narracion->slug) {
+            \Log::info('Confirmación no recibida o incorrecta: ' . $confirmation);
+            return redirect()->route('admin.narraciones.index')
+                ->with('error', 'Debe confirmar la eliminación de la narración.');
+        }
+        
+        \Log::info('Confirmación recibida correctamente: ELIMINAR_' . $narracion->slug);
+        
+        $result = $narracion->delete();
+        \Log::info('Resultado de delete: ' . $result);
+        
+        \Log::info('=== FIN DESTROY ===');
 
         return redirect()->route('admin.narraciones.index')
             ->with('success', 'Narración eliminada exitosamente.');

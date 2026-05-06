@@ -27,7 +27,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/narraciones', [NarracionController::class, 'adminIndex'])->name('narraciones.index');
     Route::get('/narraciones/create', [NarracionController::class, 'create'])->name('narraciones.create');
     Route::post('/narraciones', [NarracionController::class, 'store'])->name('narraciones.store');
-    Route::get('/narraciones/{id}/edit', [NarracionController::class, 'edit'])->name('narraciones.edit');
-    Route::put('/narraciones/{id}', [NarracionController::class, 'update'])->name('narraciones.update');
-    Route::delete('/narraciones/{id}', [NarracionController::class, 'destroy'])->name('narraciones.destroy');
+    Route::get('/narraciones/{slug}/edit', [NarracionController::class, 'edit'])->name('narraciones.edit');
+    Route::put('/narraciones/{slug}', [NarracionController::class, 'update'])->name('narraciones.update');
+    Route::delete('/narraciones/{slug}', [NarracionController::class, 'destroy'])->name('narraciones.destroy');
 });

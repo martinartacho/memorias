@@ -83,15 +83,16 @@
                   <i class="bi bi-eye icon-xs mr-1"></i>
                   Ver
                 </a>
-                <a href="{{ route('admin.narraciones.edit', $narracion->id) }}" 
+                <a href="{{ route('admin.narraciones.edit', $narracion->slug) }}" 
                    class="inline-flex items-center px-3 py-1.5 bg-stone-700 text-white border border-stone-700 rounded font-sans text-xs tracking-wider hover:bg-stone-600 hover:border-stone-600 transition-colors btn-compact-sm no-underline">
                   <i class="bi bi-pencil icon-xs mr-1"></i>
                   Editar
                 </a>
-                <form action="{{ route('admin.narraciones.destroy', $narracion->id) }}" 
+                <form action="{{ route('admin.narraciones.destroy', $narracion->slug) }}" 
                       method="POST" class="inline">
                   @csrf
                   @method('DELETE')
+                  <input type="hidden" name="confirmar_eliminacion" value="ELIMINAR_{{ $narracion->slug }}">
                   <button type="submit" 
                           class="inline-flex items-center px-3 py-1.5 bg-white border border-red-300 text-red-600 rounded font-sans text-xs tracking-wider hover:bg-red-50 hover:border-red-400 transition-colors btn-compact-sm"
                           onclick="return confirm('¿Estás seguro de eliminar esta narración?')">
