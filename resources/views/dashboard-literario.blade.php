@@ -22,7 +22,7 @@
           </h2>
           <p class="text-stone-600">{{ Auth::user()->email }}</p>
         </div>
-        <div class="text-right">
+        <div class="text-right"> 
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-800">
             <i class="bi bi-person-circle mr-2"></i>
             {{ Auth::user()->role ?? 'Lector' }}
@@ -30,22 +30,22 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="grid grid-cols-3 gap-6">
         <!-- Stats -->
-        <div class="text-center p-6 bg-stone-50 rounded-lg">
-          <i class="bi bi-book text-3xl text-stone-600 mb-3"></i>
-          <div class="text-2xl font-bold text-stone-900">0</div>
-          <div class="text-sm text-stone-600 font-sans">Narraciones</div>
+        <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+          <i class="bi bi-book text-4xl text-stone-600 mb-4"></i>
+          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">0</div>
+          <div class="text-sm text-stone-600 font-sans tracking-wide">NARRACIONES</div>
         </div>
-        <div class="text-center p-6 bg-stone-50 rounded-lg">
-          <i class="bi bi-calendar text-3xl text-stone-600 mb-3"></i>
-          <div class="text-2xl font-bold text-stone-900">{{ Auth::user()->created_at->format('M Y') }}</div>
-          <div class="text-sm text-stone-600 font-sans">Miembro desde</div>
+        <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+          <i class="bi bi-calendar text-4xl text-stone-600 mb-4"></i>
+          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">{{ Auth::user()->created_at->format('M Y') }}</div>
+          <div class="text-sm text-stone-600 font-sans tracking-wide">MIEMBRO DESDE</div>
         </div>
-        <div class="text-center p-6 bg-stone-50 rounded-lg">
-          <i class="bi bi-clock text-3xl text-stone-600 mb-3"></i>
-          <div class="text-2xl font-bold text-stone-900">Reciente</div>
-          <div class="text-sm text-stone-600 font-sans">Última visita</div>
+        <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+          <i class="bi bi-clock text-4xl text-stone-600 mb-4"></i>
+          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">Reciente</div>
+          <div class="text-sm text-stone-600 font-sans tracking-wide">ÚLTIMA VISITA</div>
         </div>
       </div>
     </div>
@@ -59,33 +59,33 @@
         Acciones Rápidas
       </h2>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-4 gap-6">
         @if(Auth::user()->role === 'admin')
         <a href="{{ route('admin.narraciones.index') }}" 
-           class="flex flex-col items-center p-6 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors text-center">
-          <i class="bi bi-gear text-3xl text-stone-600 mb-3"></i>
-          <span class="text-sm font-medium text-stone-900">Administrar</span>
+           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
+          <i class="bi bi-gear text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
+          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">ADMINISTRAR</span>
         </a>
         @endif
         
         @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
         <a href="{{ route('admin.narraciones.create') }}" 
-           class="flex flex-col items-center p-6 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors text-center">
-          <i class="bi bi-plus-circle text-3xl text-stone-600 mb-3"></i>
-          <span class="text-sm font-medium text-stone-900">Nueva Narración</span>
+           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
+          <i class="bi bi-plus-circle text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
+          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">NUEVA NARRACIÓN</span>
         </a>
         @endif
         
         <a href="{{ route('narraciones.index') }}" 
-           class="flex flex-col items-center p-6 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors text-center">
-          <i class="bi bi-book text-3xl text-stone-600 mb-3"></i>
-          <span class="text-sm font-medium text-stone-900">Leer Narraciones</span>
+           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
+          <i class="bi bi-book text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
+          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">LEER NARRACIONES</span>
         </a>
         
         <a href="#" 
-           class="flex flex-col items-center p-6 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors text-center">
-          <i class="bi bi-person text-3xl text-stone-600 mb-3"></i>
-          <span class="text-sm font-medium text-stone-900">Mi Perfil</span>
+           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
+          <i class="bi bi-person text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
+          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">MI PERFIL</span>
         </a>
       </div>
     </div>

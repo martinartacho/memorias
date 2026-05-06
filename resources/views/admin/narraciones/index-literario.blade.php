@@ -76,7 +76,8 @@
             
             <!-- Actions Section -->
             <div class="border-l border-stone-200 bg-stone-50 p-4 flex flex-col justify-center space-y-3">
-              <a href="{{ route('narraciones.show', $narracion->slug) }}" 
+              <div>
+                <a href="{{ route('narraciones.show', $narracion->slug) }}" 
                  target="_blank"
                  class="flex items-center justify-center px-4 py-2 bg-white border border-stone-300 rounded-lg font-sans text-xs tracking-wider uppercase text-stone-700 hover:bg-stone-100 hover:border-stone-400 transition-colors">
                 <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +86,8 @@
                 </svg>
                 Ver
               </a>
-              
+              </div>
+              <div>
               <a href="{{ route('admin.narraciones.edit', $narracion->id) }}" 
                  class="flex items-center justify-center px-4 py-2 bg-stone-900 text-white rounded-lg font-sans text-xs tracking-wider uppercase hover:bg-stone-800 transition-colors">
                 <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +95,8 @@
                 </svg>
                 Editar
               </a>
-              
+              </div>
+              <div>
               <form action="{{ route('admin.narraciones.destroy', $narracion->id) }}" 
                     method="POST" class="inline">
                 @csrf
@@ -107,6 +110,7 @@
                   Eliminar
                 </button>
               </form>
+              </div>
             </div>
           </div>
         </div>
