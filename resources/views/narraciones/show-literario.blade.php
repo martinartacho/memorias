@@ -14,21 +14,8 @@
     <div class="featured-text">
       <div class="featured-author">Publicado · {{ $narracion->fecha_publicacion->format('F Y') }}</div>
       <h2>{{ $narracion->titulo }}</h2>
-      <div class="modal-body">
-        @php
-            $paragraphs = preg_split('/\n\n+/', $narracion->contenido);
-            $first_paragraph = true;
-        @endphp
-        @foreach($paragraphs as $paragraph)
-            @if(trim($paragraph))
-                @if($first_paragraph)
-                    <p class="dropcap">{!! nl2br(e($paragraph)) !!}</p>
-                    <?php $first_paragraph = false; ?>
-                @else
-                    <p>{!! nl2br(e($paragraph)) !!}</p>
-                @endif
-            @endif
-        @endforeach
+      <div class="modal-body prose prose-lg max-w-none">
+        {!! $narracion->contenido !!}
       </div>
       
       <div class="mt-8 flex items-center justify-between">

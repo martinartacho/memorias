@@ -471,7 +471,7 @@
       </a></li>
       
       <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+        <i class="bi bi-box-arrow-right"></i> Cerrar
       </a></li>
       <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
         @csrf

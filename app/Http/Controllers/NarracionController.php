@@ -138,4 +138,50 @@ class NarracionController extends Controller
         return redirect()->route('admin.narraciones.index')
             ->with('success', 'Narración eliminada exitosamente.');
     }
+
+    /**
+     * Autoguardar contenido de la narración
+     */
+    public function autosave(Request $request)
+    {
+        $narracion = Narracion::findOrFail($request->narracion_id);
+        $narracion->contenido = $request->contenido;
+        $narracion->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contenido guardado automáticamente',
+            'timestamp' => now()->format('H:i:s')
+        ]);
+    }
+
+    /**
+     * Subir imagen para la narración
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        try {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('narraciones/images', $filename, 'public');
+
+            $url = asset('storage/' . $path);
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'filename' => $filename,
+                'alt' => $file->getClientOriginalName()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al subir la imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
