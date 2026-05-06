@@ -13,8 +13,14 @@ Auth::routes();
 
 // Dashboard para usuarios autenticados
 Route::get('/dashboard', function () {
-    return view('dashboard-literario');
+    return view('dashboard');
 })->middleware('auth')->name('dashboard');
+
+// Rutas de perfil de usuario
+Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
+Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->middleware('auth')->name('profile.update');
+Route::get('/profile/password', [App\Http\Controllers\ProfileController::class, 'editPassword'])->middleware('auth')->name('profile.password.edit');
+Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->middleware('auth')->name('profile.password.update');
 
 // Rutas de administración (protegidas)
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {

@@ -21,7 +21,7 @@
 
   <!-- Form -->
   <div class="bg-white rounded-lg border border-stone-300 overflow-hidden">
-    <form action="{{ route('admin.narraciones.update', $narracion->id) }}" method="POST">
+    <form id="edit-form" action="{{ route('admin.narraciones.update', $narracion->id) }}" method="POST">
       @csrf
       @method('PUT')
       
@@ -135,7 +135,7 @@
             @if($narracion->estado === 'publicado')
               <a href="{{ route('narraciones.show', $narracion->slug) }}" 
                  target="_blank"
-                 class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors">
+                 class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors no-underline">
                 Ver Publicada
               </a>
             @endif
@@ -152,11 +152,12 @@
           </div>
           <div class="space-x-4">
             <a href="{{ route('admin.narraciones.index') }}" 
-               class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors">
+               class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors no-underline">
               Cancelar
             </a>
             <button type="submit" 
-                    class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-900 hover:bg-stone-800 transition-colors">
+                    form="edit-form"
+                    class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-700 hover:bg-stone-600 transition-colors">
               Actualizar
             </button>
           </div>

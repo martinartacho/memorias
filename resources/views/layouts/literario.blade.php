@@ -15,7 +15,6 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{{ asset('css/literario.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital@0;1&family=Josefin+Sans:wght@300;400&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -457,13 +456,17 @@
     </a></li>
     
     @auth
+      <li><a href="{{ route('dashboard') }}" class="{{ request()->is('dashboard') ? 'active' : '' }}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a></li>
+      
       @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
       <li><a href="{{ route('admin.narraciones.index') }}" class="{{ request()->is('admin*') ? 'active' : '' }}">
         <i class="bi bi-gear"></i> Administrar
       </a></li>
       @endif
       
-      <li><a href="{{ route('home') }}">
+      <li><a href="{{ route('profile.edit') }}">
         <i class="bi bi-person-circle"></i> {{ Auth::user()->name }}
       </a></li>
       

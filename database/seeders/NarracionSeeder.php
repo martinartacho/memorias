@@ -48,5 +48,13 @@ class NarracionSeeder extends Seeder
         foreach ($narraciones as $narracion) {
             Narracion::create($narracion);
         }
+
+        // Actualizar slugs a cadenas simples
+        $slugs = ['cafe-esquina', 'cartas-llegaron', 'ultimo-tren', 'suenos-fragmentos'];
+        $ids = [1, 2, 3, 4];
+        
+        foreach ($ids as $index => $id) {
+            Narracion::where('id', $id)->update(['slug' => $slugs[$index]]);
+        }
     }
 }
