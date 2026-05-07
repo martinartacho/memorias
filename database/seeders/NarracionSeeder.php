@@ -21,6 +21,11 @@ class NarracionSeeder extends Seeder
                 'slug' => 'el-cafe-de-la-esquina',
                 'fecha_publicacion' => '2024-01-15',
                 'estado' => 'publicado',
+                'user_id' => 1,
+                'orden' => 1000,
+                'permiso_lectura' => 'publico',
+                'count_feedback' => 0,
+                'count_read' => 0,
             ],
             [
                 'titulo' => 'Cartas que nunca llegaron',
@@ -28,6 +33,11 @@ class NarracionSeeder extends Seeder
                 'slug' => 'cartas-que-nunca-llegaron',
                 'fecha_publicacion' => '2024-02-20',
                 'estado' => 'publicado',
+                'user_id' => 1,
+                'orden' => 2000,
+                'permiso_lectura' => 'publico',
+                'count_feedback' => 5,
+                'count_read' => 23,
             ],
             [
                 'titulo' => 'El último tren',
@@ -35,6 +45,11 @@ class NarracionSeeder extends Seeder
                 'slug' => 'el-ultimo-tren',
                 'fecha_publicacion' => '2024-03-10',
                 'estado' => 'publicado',
+                'user_id' => 1,
+                'orden' => 3000,
+                'permiso_lectura' => 'publico',
+                'count_feedback' => 2,
+                'count_read' => 15,
             ],
             [
                 'titulo' => 'Fragmentos de un sueño',
@@ -42,6 +57,11 @@ class NarracionSeeder extends Seeder
                 'slug' => 'fragmentos-de-un-sueno',
                 'fecha_publicacion' => '2024-04-05',
                 'estado' => 'borrador',
+                'user_id' => 1,
+                'orden' => 4000,
+                'permiso_lectura' => 'seguidores',
+                'count_feedback' => 0,
+                'count_read' => 8,
             ],
         ];
 
