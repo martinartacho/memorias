@@ -45,9 +45,6 @@
                 @case('seguidores')
                   <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
                   @break
-                @case('privado')
-                  <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
-                  @break
               @endswitch
             </span>
           </div>

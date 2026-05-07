@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\NarracionController;
+use App\Http\Controllers\FollowController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas públicas
@@ -8,6 +9,15 @@ Route::get('/', [NarracionController::class, 'index'])->name('home');
 Route::get('/narraciones', [NarracionController::class, 'index'])->name('narraciones.index');
 Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('narraciones.show');
 Route::get('/narracion/{slug}/follow-required', [NarracionController::class, 'followRequired'])->name('narraciones.follow-required');
+
+// Rutas para sistema de seguimiento
+Route::middleware('auth')->group(function () {
+    Route::post('/follow/{authorId}', [FollowController::class, 'follow'])->name('follow.follow');
+    Route::post('/unfollow/{authorId}', [FollowController::class, 'unfollow'])->name('follow.unfollow');
+    Route::post('/follow/toggle/{authorId}', [FollowController::class, 'toggle'])->name('follow.toggle');
+    Route::get('/following', [FollowController::class, 'following'])->name('follow.following');
+    Route::get('/followers', [FollowController::class, 'followers'])->name('follow.followers');
+});
 
 // Rutas de autenticación
 Auth::routes();

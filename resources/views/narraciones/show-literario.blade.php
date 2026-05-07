@@ -24,10 +24,6 @@
               <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
               <span class="text-purple-600 text-sm ml-1">Solo seguidores</span>
               @break
-            @case('privado')
-              <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
-              <span class="text-red-600 text-sm ml-1">Privado</span>
-              @break
           @endswitch
         </span>
       </div>
@@ -38,7 +34,28 @@
       
       <div class="mt-8 flex items-center justify-between">
         <a href="{{ route('narraciones.index') }}" class="read-more">← Volver a todas las narraciones</a>
-        <div class="flex space-x-4">
+        <div class="flex items-center space-x-4">
+            <!-- Follow/Unfollow Author Button -->
+            @if(auth()->check() && auth()->id() != $narracion->user_id)
+                <button 
+                    id="follow-btn" 
+                    class="follow-btn inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-sans rounded-lg hover:bg-purple-700 transition-colors"
+                    data-author-id="{{ $narracion->user_id }}"
+                    data-following="{{ auth()->user()->following()->where('followed_id', $narracion->user_id)->exists() ? 'true' : 'false' }}">
+                    <i class="bi bi-person-plus mr-2"></i>
+                    <span class="follow-text">Seguir autor</span>
+                </button>
+            @endif
+            
+            <!-- Like Button -->
+            <button 
+                id="like-btn" 
+                class="like-btn inline-flex items-center px-4 py-2 bg-red-500 text-white text-sm font-sans rounded-lg hover:bg-red-600 transition-colors"
+                data-narracion-id="{{ $narracion->id }}">
+                <i class="bi bi-heart mr-2"></i>
+                <span>Me Gusta</span>
+            </button>
+            
             <!-- Share Button (placeholder) -->
             <button class="read-more" title="Compartir" onclick="alert('Función de compartir próximamente')">
                 Compartir →
@@ -73,9 +90,6 @@
             $relatedQuery->where('permiso_lectura', 'publico');
         }
         
-        // NUNCA mostrar narraciones privadas
-        $relatedQuery->where('permiso_lectura', '!=', 'privado');
-        
         $related = $relatedQuery->take(3)->get();
     @endphp
     @foreach($related as $key => $story)
@@ -90,9 +104,6 @@
                   @break
                 @case('seguidores')
                   <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
-                  @break
-                @case('privado')
-                  <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
                   @break
               @endswitch
             </span>
@@ -118,3 +129,108 @@
 
 </main>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Funcionalidad de Follow/Unfollow
+    const followBtn = document.getElementById('follow-btn');
+    if (followBtn) {
+        followBtn.addEventListener('click', function() {
+            const authorId = this.dataset.authorId;
+            const isFollowing = this.dataset.following === 'true';
+            
+            fetch(`/follow/toggle/${authorId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Actualizar estado del botón
+                this.dataset.following = data.following;
+                const icon = this.querySelector('i');
+                const text = this.querySelector('.follow-text');
+                
+                if (data.following) {
+                    icon.className = 'bi bi-person-check mr-2';
+                    text.textContent = 'Siguiendo';
+                    this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                    this.classList.add('bg-green-600', 'hover:bg-green-700');
+                } else {
+                    icon.className = 'bi bi-person-plus mr-2';
+                    text.textContent = 'Seguir autor';
+                    this.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    this.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                }
+                
+                // Mostrar mensaje
+                showToast(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al procesar la solicitud');
+            });
+        });
+    }
+    
+    // Funcionalidad de Like
+    const likeBtn = document.getElementById('like-btn');
+    if (likeBtn) {
+        let isLiked = false;
+        
+        likeBtn.addEventListener('click', function() {
+            const narracionId = this.dataset.narracionId;
+            const icon = this.querySelector('i');
+            
+            isLiked = !isLiked;
+            
+            if (isLiked) {
+                icon.className = 'bi bi-heart-fill mr-2';
+                this.classList.remove('bg-red-500', 'hover:bg-red-600');
+                this.classList.add('bg-red-600', 'hover:bg-red-700');
+                showToast('¡Te gusta esta narración!');
+            } else {
+                icon.className = 'bi bi-heart mr-2';
+                this.classList.remove('bg-red-600', 'hover:bg-red-700');
+                this.classList.add('bg-red-500', 'hover:bg-red-600');
+                showToast('Has quitado el "Me Gusta"');
+            }
+            
+            // Aquí podrías hacer una llamada AJAX para guardar en la base de datos
+        });
+    }
+});
+
+// Función para mostrar notificaciones toast
+function showToast(message) {
+    // Crear elemento toast
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-stone-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Animación de entrada
+    setTimeout(() => {
+        toast.style.opacity = '1';
+    }, 100);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+</script>
+@endpush

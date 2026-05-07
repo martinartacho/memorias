@@ -11,7 +11,7 @@
         <p class="text-stone-600">Gestiona tus narraciones literarias</p>
       </div>
       <a href="{{ route('admin.narraciones.create') }}" 
-         class="inline-flex items-center px-6 py-3 bg-stone-900 text-white font-sans text-xs tracking-widest uppercase hover:bg-stone-800 transition-colors shadow-sm">
+         class="inline-flex items-center px-6 py-3 bg-stone-700 text-white font-sans text-xs tracking-widest uppercase hover:bg-stone-600 transition-colors shadow-sm">
         <i class="bi bi-plus-circle icon-sm mr-2"></i>
         Nueva Narración
       </a>

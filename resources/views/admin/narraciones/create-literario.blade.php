@@ -124,17 +124,6 @@
                 <div class="font-sans text-sm text-stone-600">Solo para usuarios registrados</div>
               </div>
             </label>
-            <label class="flex items-center p-4 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-50">
-              <input type="radio" 
-                     name="permiso_lectura" 
-                     value="privado" 
-                     {{ old('permiso_lectura') === 'privado' ? 'checked' : '' }}
-                     class="mr-3 text-stone-600 focus:ring-stone-500">
-              <div>
-                <div class="font-sans font-medium text-stone-900">Privado</div>
-                <div class="font-sans text-sm text-stone-600">Solo para mí</div>
-              </div>
-            </label>
           </div>
           @error('permiso_lectura')
             <p class="mt-2 text-sm text-red-600 font-sans">{{ $message }}</p>

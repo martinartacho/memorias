@@ -44,22 +44,32 @@
       <!-- Botones de acción -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         @if(auth()->check())
-          <button class="px-6 py-3 bg-stone-900 text-white font-sans text-sm tracking-wider uppercase hover:bg-stone-800 transition-colors">
+          <!-- Botón de seguir autor -->
+          <button 
+            id="follow-author-btn"
+            class="follow-author-btn inline-flex items-center justify-center px-6 py-3 bg-purple-600 text-white font-sans text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+            data-author-id="{{ $narracion->user_id }}"
+            data-following="{{ auth()->user()->following()->where('followed_id', $narracion->user_id)->exists() ? 'true' : 'false' }}">
             <i class="bi bi-person-plus mr-2"></i>
-            Seguir a {{ $narracion->user->name }}
+            <span class="follow-text">Seguir autor para leer</span>
           </button>
+          
+          <a href="{{ route('narraciones.index') }}" 
+             class="inline-flex items-center justify-center px-6 py-3 border border-stone-300 text-stone-700 font-sans text-sm font-medium rounded-lg hover:bg-stone-50 transition-colors">
+            <i class="bi bi-arrow-left mr-2"></i>
+            Volver a narraciones
+          </a>
         @else
           <a href="{{ route('login') }}" 
-             class="px-6 py-3 bg-stone-900 text-white font-sans text-sm tracking-wider uppercase hover:bg-stone-800 transition-colors inline-flex items-center">
-            <i class="bi bi-box-arrow-in-right mr-2"></i>
+             class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-sans text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="bi bi-person-plus mr-2"></i>
             Iniciar sesión para seguir
           </a>
+          <a href="{{ route('register') }}" 
+             class="inline-flex items-center justify-center px-6 py-3 border border-stone-300 text-stone-700 font-sans text-sm font-medium rounded-lg hover:bg-stone-50 transition-colors">
+            Crear cuenta
+          </a>
         @endif
-        
-        <a href="{{ route('narraciones.index') }}" 
-           class="px-6 py-3 bg-white border border-stone-300 text-stone-700 font-sans text-sm tracking-wider uppercase hover:bg-stone-50 transition-colors">
-          Volver a narraciones
-        </a>
       </div>
 
       <!-- Información adicional -->
@@ -75,3 +85,81 @@
   </div>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Funcionalidad de Follow en vista follow-required
+    const followBtn = document.getElementById('follow-author-btn');
+    if (followBtn) {
+        followBtn.addEventListener('click', function() {
+            const authorId = this.dataset.authorId;
+            const isFollowing = this.dataset.following === 'true';
+            
+            fetch(`/follow/toggle/${authorId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Actualizar estado del botón
+                this.dataset.following = data.following;
+                const icon = this.querySelector('i');
+                const text = this.querySelector('.follow-text');
+                
+                if (data.following) {
+                    icon.className = 'bi bi-person-check mr-2';
+                    text.textContent = '¡Siguiendo! Redirigiendo...';
+                    this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                    this.classList.add('bg-green-600', 'hover:bg-green-700');
+                    
+                    // Redirigir a la narración después de seguir
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname.replace('/follow-required', '');
+                    }, 1500);
+                } else {
+                    icon.className = 'bi bi-person-plus mr-2';
+                    text.textContent = 'Seguir autor para leer';
+                    this.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    this.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                }
+                
+                showToast(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al procesar la solicitud');
+            });
+        });
+    }
+});
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-stone-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '1';
+    }, 100);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+</script>
+@endpush
