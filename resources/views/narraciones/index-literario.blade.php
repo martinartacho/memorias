@@ -37,9 +37,19 @@
           <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
           <div class="card-tag">
             Narración
-            @if($narracion->permiso_lectura === 'seguidores')
-              <span class="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Seguidores</span>
-            @endif
+            <span class="ml-2">
+              @switch($narracion->permiso_lectura)
+                @case('publico')
+                  <i class="bi bi-globe text-blue-600" title="Público"></i>
+                  @break
+                @case('seguidores')
+                  <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
+                  @break
+                @case('privado')
+                  <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
+                  @break
+              @endswitch
+            </span>
           </div>
           <div class="card-title">{{ $narracion->titulo }}</div>
           <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>

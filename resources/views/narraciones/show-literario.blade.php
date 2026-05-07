@@ -12,7 +12,25 @@
     </div>
     <div class="featured-divider"></div>
     <div class="featured-text">
-      <div class="featured-author">Publicado · {{ $narracion->fecha_publicacion->format('F Y') }}</div>
+      <div class="featured-author">
+        Publicado · {{ $narracion->fecha_publicacion->format('F Y') }}
+        <span class="ml-3">
+          @switch($narracion->permiso_lectura)
+            @case('publico')
+              <i class="bi bi-globe text-blue-600" title="Público"></i>
+              <span class="text-blue-600 text-sm ml-1">Público</span>
+              @break
+            @case('seguidores')
+              <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
+              <span class="text-purple-600 text-sm ml-1">Solo seguidores</span>
+              @break
+            @case('privado')
+              <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
+              <span class="text-red-600 text-sm ml-1">Privado</span>
+              @break
+          @endswitch
+        </span>
+      </div>
       <h2>{{ $narracion->titulo }}</h2>
       <div class="modal-body prose prose-lg max-w-none">
         {!! $narracion->contenido !!}
@@ -46,7 +64,22 @@
     @foreach($related as $key => $story)
         <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $story->slug) }}'">
           <div class="card-num">{{ str_pad($key + 1, 2, '0', STR_PAD_LEFT) }}</div>
-          <div class="card-tag">Narración</div>
+          <div class="card-tag">
+            Narración
+            <span class="ml-2">
+              @switch($story->permiso_lectura)
+                @case('publico')
+                  <i class="bi bi-globe text-blue-600" title="Público"></i>
+                  @break
+                @case('seguidores')
+                  <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
+                  @break
+                @case('privado')
+                  <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
+                  @break
+              @endswitch
+            </span>
+          </div>
           <div class="card-title">{{ $story->titulo }}</div>
           <div class="card-author">{{ $story->fecha_publicacion->format('F Y') }}</div>
           <p class="card-excerpt">{!! Str::limit(strip_tags($story->contenido), 120) !!}</p>

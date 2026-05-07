@@ -102,6 +102,8 @@ class NarracionController extends Controller
             'contenido' => 'required',
             'fecha_publicacion' => 'required|date',
             'estado' => 'required|in:borrador,publicado',
+            'orden' => 'nullable|integer|in:0,1000',
+            'permiso_lectura' => 'nullable|in:publico,seguidores,privado',
         ]);
 
         $narracion = Narracion::create([
@@ -143,6 +145,8 @@ class NarracionController extends Controller
             'contenido' => 'required',
             'fecha_publicacion' => 'required|date',
             'estado' => 'required|in:borrador,publicado',
+            'orden' => 'nullable|integer|in:0,1000',
+            'permiso_lectura' => 'nullable|in:publico,seguidores,privado',
         ]);
 
         \Log::info('Validación pasada');
