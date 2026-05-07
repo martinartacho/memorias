@@ -15,6 +15,10 @@ class Narracion extends Model
         'slug',
         'fecha_publicacion',
         'estado',
+        'user_id',
+        'orden',
+        'permiso_lectura',
+        'count_feedback',
     ];
 
     protected $casts = [
@@ -34,5 +38,28 @@ class Narracion extends Model
     public function getExcerptAttribute()
     {
         return str_limit(strip_tags($this->contenido), 200);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function scopeConPermisoLectura($query, $user = null)
+    {
+        if (!$user) {
+            return $query->where('permiso_lectura', 'publico');
+        }
+        
+        return $query->where(function($q) use ($user) {
+            $q->where('permiso_lectura', 'publico')
+              ->orWhere('permiso_lectura', 'seguidores')
+              ->orWhere('user_id', $user->id);
+        });
+    }
+
+    public function scopeByOrden($query, $direction = 'asc')
+    {
+        return $query->orderBy('orden', $direction);
     }
 }
