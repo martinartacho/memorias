@@ -19,6 +19,7 @@ class Narracion extends Model
         'orden',
         'permiso_lectura',
         'count_feedback',
+        'count_read',
     ];
 
     protected $casts = [
