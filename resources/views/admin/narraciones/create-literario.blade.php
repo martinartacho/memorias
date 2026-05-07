@@ -77,6 +77,70 @@
           @enderror
         </div>
 
+        <!-- Orden -->
+        <div>
+          <label for="orden" class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-3">
+            Orden de presentación
+          </label>
+          <input type="number" 
+                 id="orden" 
+                 name="orden" 
+                 value="{{ old('orden', 1000) }}"
+                 class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-sans"
+                 placeholder="1000 = preferente">
+          <p class="mt-2 text-sm text-stone-500 font-sans">
+            Números más bajos aparecen primero (1000 = preferente)
+          </p>
+          @error('orden')
+            <p class="mt-2 text-sm text-red-600 font-sans">{{ $message }}</p>
+          @enderror
+        </div>
+
+        <!-- Permiso de lectura -->
+        <div>
+          <label class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-3">
+            Permiso de lectura
+          </label>
+          <div class="space-y-3">
+            <label class="flex items-center p-4 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-50">
+              <input type="radio" 
+                     name="permiso_lectura" 
+                     value="publico" 
+                     {{ old('permiso_lectura', 'publico') === 'publico' ? 'checked' : '' }}
+                     class="mr-3 text-stone-600 focus:ring-stone-500">
+              <div>
+                <div class="font-sans font-medium text-stone-900">Público</div>
+                <div class="font-sans text-sm text-stone-600">Visible para todos</div>
+              </div>
+            </label>
+            <label class="flex items-center p-4 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-50">
+              <input type="radio" 
+                     name="permiso_lectura" 
+                     value="seguidores" 
+                     {{ old('permiso_lectura') === 'seguidores' ? 'checked' : '' }}
+                     class="mr-3 text-stone-600 focus:ring-stone-500">
+              <div>
+                <div class="font-sans font-medium text-stone-900">Seguidores</div>
+                <div class="font-sans text-sm text-stone-600">Solo para usuarios registrados</div>
+              </div>
+            </label>
+            <label class="flex items-center p-4 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-50">
+              <input type="radio" 
+                     name="permiso_lectura" 
+                     value="privado" 
+                     {{ old('permiso_lectura') === 'privado' ? 'checked' : '' }}
+                     class="mr-3 text-stone-600 focus:ring-stone-500">
+              <div>
+                <div class="font-sans font-medium text-stone-900">Privado</div>
+                <div class="font-sans text-sm text-stone-600">Solo para mí</div>
+              </div>
+            </label>
+          </div>
+          @error('permiso_lectura')
+            <p class="mt-2 text-sm text-red-600 font-sans">{{ $message }}</p>
+          @enderror
+        </div>
+
         <!-- Estado -->
         <div>
           <label class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-3">
