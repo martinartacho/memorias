@@ -193,7 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Has quitado el "Me Gusta"');
             }
             
-            // Aquí podrías hacer una llamada AJAX para guardar en la base de datos
+            // Mostrar alerta temporal mientras se implementa la funcionalidad completa
+            showToast('¡Función "Me Gusta" próximamente disponible!');
         });
     }
 });
