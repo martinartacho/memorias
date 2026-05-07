@@ -53,7 +53,7 @@ class NarracionController extends Controller
             'fecha_publicacion' => $request->fecha_publicacion,
             'estado' => $request->estado,
             'user_id' => auth()->id(),
-            'orden' => $request->orden ?? 1000,
+            'orden' => $request->orden ?? 0,
             'permiso_lectura' => $request->permiso_lectura ?? 'publico',
             'count_feedback' => 0,
             'count_read' => 0,

@@ -21,7 +21,7 @@ return new class extends Migration
             
             // Nuevos campos
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Autor/creador
-            $table->integer('orden')->default(1000); // Orden de presentación (1000 = preferente)
+            $table->integer('orden')->default(0); // Orden de presentación (0 = automático, 1000+ = preferente)
             $table->enum('permiso_lectura', ['publico', 'seguidores', 'privado'])->default('publico'); // Permisos de lectura
             $table->integer('count_feedback')->default(0); // Contador de feedback/votaciones
             $table->integer('count_read')->default(0); // Contador de lectores

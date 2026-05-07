@@ -324,14 +324,14 @@
           <label for="orden" class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-3">
             Orden de presentación
           </label>
-          <input type="number" 
-                 id="orden" 
-                 name="orden" 
-                 value="{{ old('orden', $narracion->orden) }}"
-                 class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-sans"
-                 placeholder="1000 = preferente">
+          <select id="orden" 
+                  name="orden" 
+                  class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-sans">
+            <option value="0" {{ old('orden', $narracion->orden) == 0 ? 'selected' : '' }}>Automático (por fecha)</option>
+            <option value="1000" {{ old('orden', $narracion->orden) == 1000 ? 'selected' : '' }}>Preferente</option>
+          </select>
           <p class="mt-2 text-sm text-stone-500 font-sans">
-            Números más bajos aparecen primero (1000 = preferente)
+            Automático: orden cronológico | Preferente: aparece primero
           </p>
           @error('orden')
             <p class="mt-2 text-sm text-red-600 font-sans">{{ $message }}</p>

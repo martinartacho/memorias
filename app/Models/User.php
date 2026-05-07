@@ -78,4 +78,34 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['admin', 'editor']);
     }
+
+    // Relación: narraciones que ha creado
+    public function narraciones()
+    {
+        return $this->hasMany(Narracion::class);
+    }
+
+    // Relación: usuarios que este usuario sigue
+    public function following()
+    {
+        return $this->hasMany(Follow::class, 'follower_id');
+    }
+
+    // Relación: usuarios que siguen a este autor
+    public function followers()
+    {
+        return $this->hasMany(Follow::class, 'followed_id');
+    }
+
+    // Scope para obtener autores que sigue este usuario
+    public function scopeFollowingAuthors($query)
+    {
+        return $query->whereHas('following');
+    }
+
+    // Scope para obtener autores con seguidores
+    public function scopeWithFollowers($query)
+    {
+        return $query->whereHas('followers');
+    }
 }
