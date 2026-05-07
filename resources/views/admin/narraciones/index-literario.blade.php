@@ -4,33 +4,35 @@
 
 @section('content')
 <main class="container">
-  <div class="text-center mb-12">
-    <h2 class="text-3xl font-serif font-bold text-stone-900 mb-4">Administración</h2>
-    <p class="text-stone-600">Gestiona tus narraciones literarias</p>
-    <div class="mt-6">
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-3xl font-serif font-bold text-stone-900 mb-2">Administración</h2>
+        <p class="text-stone-600">Gestiona tus narraciones literarias</p>
+      </div>
       <a href="{{ route('admin.narraciones.create') }}" 
-         class="inline-flex items-center px-6 py-3 bg-stone-700 text-stone-100 font-sans text-xs tracking-widest uppercase hover:bg-stone-600 transition-colors">
+         class="inline-flex items-center px-6 py-3 bg-stone-900 text-white font-sans text-xs tracking-widest uppercase hover:bg-stone-800 transition-colors shadow-sm">
         <i class="bi bi-plus-circle icon-sm mr-2"></i>
         Nueva Narración
       </a>
     </div>
   </div>
 
-  <!-- Stats Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-    <div class="bg-white rounded-lg border border-stone-300 p-6 text-center">
-      <div class="text-4xl font-serif font-bold text-stone-700 mb-2">{{ $narraciones->total() }}</div>
-      <div class="text-sm font-sans text-stone-600 tracking-wider uppercase">Total Narraciones</div>
-    </div>
-
-    <div class="bg-white rounded-lg border border-stone-300 p-6 text-center">
-      <div class="text-4xl font-serif font-bold text-green-700 mb-2">{{ App\Models\Narracion::where('estado', 'publicado')->count() }}</div>
-      <div class="text-sm font-sans text-stone-600 tracking-wider uppercase">Publicadas</div>
-    </div>
-
-    <div class="bg-white rounded-lg border border-stone-300 p-6 text-center">
-      <div class="text-4xl font-serif font-bold text-yellow-700 mb-2">{{ App\Models\Narracion::where('estado', 'borrador')->count() }}</div>
-      <div class="text-sm font-sans text-stone-600 tracking-wider uppercase">Borradores</div>
+  <!-- Stats Row -->
+  <div class="bg-white rounded-lg border border-stone-300 p-6 mb-12">
+    <div class="grid grid-cols-3 gap-8 text-center">
+      <div>
+        <div class="text-3xl font-serif font-bold text-stone-700 mb-1">{{ $narraciones->total() }}</div>
+        <div class="text-sm font-sans text-stone-600 tracking-wider uppercase">Total Narraciones</div>
+      </div>
+      <div>
+        <div class="text-3xl font-serif font-bold text-green-700 mb-1">{{ App\Models\Narracion::where('estado', 'publicado')->count() }}</div>
+        <div class="text-sm font-sans text-stone-600 tracking-wider uppercase">Publicadas</div>
+      </div>
+      <div>
+        <div class="text-3xl font-serif font-bold text-yellow-700 mb-1">{{ App\Models\Narracion::where('estado', 'borrador')->count() }}</div>
+        <div class="text-sm font-sans text-stone-600 tracking-wider uppercase">Borradores</div>
+      </div>
     </div>
   </div>
 
@@ -63,11 +65,39 @@
               </div>
             </div>
             
-            <!-- Dates Section -->
+            <!-- Meta Section -->
             <div class="font-sans text-xs text-stone-500 tracking-wider uppercase mb-4">
-              <div class="flex flex-wrap gap-x-6 gap-y-1">
-                <div>Publicado: {{ $narracion->fecha_publicacion->format('d \d\e F \d\e Y') }}</div>
-                <div>Creado: {{ $narracion->created_at->format('d \d\e F \d\e Y') }}</div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2">
+                <div>
+                  <span class="block text-stone-400 mb-1">Publicado:</span>
+                  {{ $narracion->fecha_publicacion->format('d M Y') }}
+                </div>
+                <div>
+                  <span class="block text-stone-400 mb-1">Orden:</span>
+                  @if($narracion->orden == 1000)
+                    <span class="text-green-700 font-medium">Preferente</span>
+                  @else
+                    <span class="text-stone-600">Automático</span>
+                  @endif
+                </div>
+                <div>
+                  <span class="block text-stone-400 mb-1">Lectores:</span>
+                  <span class="text-stone-600">{{ $narracion->count_read }}</span>
+                </div>
+                <div>
+                  <span class="block text-stone-400 mb-1">Permisos:</span>
+                  @switch($narracion->permiso_lectura)
+                    @case('publico')
+                      <span class="text-blue-700 font-medium">Público</span>
+                      @break
+                    @case('seguidores')
+                      <span class="text-purple-700 font-medium">Seguidores</span>
+                      @break
+                    @case('privado')
+                      <span class="text-red-700 font-medium">Privado</span>
+                      @break
+                  @endswitch
+                </div>
               </div>
             </div>
              
