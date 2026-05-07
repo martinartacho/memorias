@@ -52,6 +52,11 @@ class NarracionController extends Controller
             'slug' => Str::slug($request->titulo) . '-' . time(),
             'fecha_publicacion' => $request->fecha_publicacion,
             'estado' => $request->estado,
+            'user_id' => auth()->id(),
+            'orden' => $request->orden ?? 1000,
+            'permiso_lectura' => $request->permiso_lectura ?? 'publico',
+            'count_feedback' => 0,
+            'count_read' => 0,
         ]);
 
         return redirect()->route('admin.narraciones.index')
@@ -89,6 +94,8 @@ class NarracionController extends Controller
             'contenido' => $request->contenido,
             'fecha_publicacion' => $request->fecha_publicacion,
             'estado' => $request->estado,
+            'orden' => $request->orden ?? $narracion->orden,
+            'permiso_lectura' => $request->permiso_lectura ?? $narracion->permiso_lectura,
         ];
         
         \Log::info('Datos para actualizar:', $updateData);
