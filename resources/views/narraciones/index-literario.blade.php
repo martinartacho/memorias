@@ -56,8 +56,8 @@
     </div>
 
     <!-- Pagination -->
-    <div class="mt-12 flex justify-center">
-        {{ $narraciones->links() }}
+    <div class="mt-12">
+        {{ $narraciones->links('vendor.pagination.bootstrap-4') }}
     </div>
 
   @else

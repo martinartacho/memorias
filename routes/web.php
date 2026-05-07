@@ -9,6 +9,8 @@ Route::get('/', [NarracionController::class, 'index'])->name('home');
 Route::get('/narraciones', [NarracionController::class, 'index'])->name('narraciones.index');
 Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('narraciones.show');
 Route::get('/narracion/{slug}/follow-required', [NarracionController::class, 'followRequired'])->name('narraciones.follow-required');
+Route::get('/narracion/{slug}/feedback', [NarracionController::class, 'feedbackForm'])->name('narraciones.feedback');
+Route::post('/feedback', [NarracionController::class, 'storeFeedback'])->name('feedback.store');
 
 // Rutas para sistema de seguimiento
 Route::middleware('auth')->group(function () {

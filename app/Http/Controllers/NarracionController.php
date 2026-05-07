@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Narracion;
+use App\Models\Feedback;
 use Illuminate\Support\Str;
 
 class NarracionController extends Controller
@@ -63,8 +64,69 @@ class NarracionController extends Controller
         $narracion = Narracion::where('slug', $slug)
             ->publicado()
             ->firstOrFail();
-        
         return view('narraciones.follow-required', compact('narracion'));
+    }
+
+    /**
+     * Mostrar formulario de feedback para una narración
+     */
+    public function feedbackForm($slug)
+    {
+        
+         $narracion = Narracion::where('slug', $slug)
+            ->publicado()
+            ->firstOrFail();
+        return view('narraciones.feedback-form', compact('narracion'));
+    }
+
+    /**
+     * Guardar feedback de una narración
+     */
+    public function storeFeedback(Request $request)
+    {
+        $request->validate([
+            'narracion_id' => 'required|exists:narraciones,id',
+            'tipo_feedback' => 'required|in:excelente,bueno,regular',
+            'comentario' => 'nullable|string|max:1000',
+            'email' => 'required|email|max:255',
+        ]);
+
+        try {
+            // Obtener la narración para guardar el ID
+            $narracion = Narracion::findOrFail($request->narracion_id);
+            
+            // Guardar feedback en la base de datos
+            Feedback::create([
+                'narracion_id' => $narracion->id,
+                'tipo_feedback' => $request->tipo_feedback,
+                'comentario' => $request->comentario,
+                'email' => $request->email,
+                'nombre' => auth()->check() ? auth()->user()->name : null,
+                'ip_address' => $request->ip(),
+                'aprobado' => false, // Requiere moderación
+            ]);
+
+            // Log para debugging
+            \Log::info('Feedback guardado:', [
+                'narracion_id' => $narracion->id,
+                'tipo_feedback' => $request->tipo_feedback,
+                'email' => $request->email,
+                'ip' => $request->ip(),
+            ]);
+
+            return redirect()->back()
+                ->with('success', '¡Gracias por tu feedback! Tu opinión ha sido enviada y será revisada pronto.');
+
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar feedback:', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Hubo un error al enviar tu feedback. Por favor, inténtalo de nuevo.')
+                ->withInput();
+        }
     }
 
     public function adminIndex()

@@ -89,56 +89,11 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de Follow en vista follow-required
+    // Funcionalidad de Follow en vista follow-required (simplificada con alerta)
     const followBtn = document.getElementById('follow-author-btn');
     if (followBtn) {
         followBtn.addEventListener('click', function() {
-            const authorId = this.dataset.authorId;
-            const isFollowing = this.dataset.following === 'true';
-            
-            fetch(`/follow/toggle/${authorId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-                
-                // Actualizar estado del botón
-                this.dataset.following = data.following;
-                const icon = this.querySelector('i');
-                const text = this.querySelector('.follow-text');
-                
-                if (data.following) {
-                    icon.className = 'bi bi-person-check mr-2';
-                    text.textContent = '¡Siguiendo! Redirigiendo...';
-                    this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-                    this.classList.add('bg-green-600', 'hover:bg-green-700');
-                    
-                    // Redirigir a la narración después de seguir
-                    setTimeout(() => {
-                        window.location.href = window.location.pathname.replace('/follow-required', '');
-                    }, 1500);
-                } else {
-                    icon.className = 'bi bi-person-plus mr-2';
-                    text.textContent = 'Seguir autor para leer';
-                    this.classList.remove('bg-green-600', 'hover:bg-green-700');
-                    this.classList.add('bg-purple-600', 'hover:bg-purple-700');
-                }
-                
-                showToast(data.message);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error al procesar la solicitud');
-            });
+            alert('Función de seguimiento en construcción. Próximamente podrás seguir a este autor para acceder a su contenido exclusivo.');
         });
     }
 });

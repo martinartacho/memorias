@@ -88,17 +88,70 @@
   <div class="max-w-4xl mx-auto mb-12">
     <div class="bg-white rounded-lg shadow-sm border border-stone-200 p-8">
       <h2 class="text-2xl font-serif font-bold text-stone-900 mb-6">
-        Autores que Sigues
+        Descubrir Autores
       </h2>
       
-      <div id="following-authors" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Los autores que sigue el usuario se cargarán aquí -->
+      @php
+        // Obtener todos los autores excepto el usuario actual
+        $authors = \App\Models\User::where('id', '!=', Auth::id())
+            ->where('role', 'admin') // Solo mostrar autores/admins
+            ->withCount('narraciones')
+            ->get();
+      @endphp
+      
+      @if($authors->count() > 0)
+        <div class="space-y-4">
+          @foreach($authors as $author)
+            <div class="flex items-center justify-between p-4 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+              <div class="flex items-center">
+                <div class="w-12 h-12 bg-stone-300 rounded-full flex items-center justify-center mr-4">
+                  <i class="bi bi-person text-stone-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-sans font-medium text-stone-900">{{ $author->name }}</h4>
+                  <p class="text-sm text-stone-600">{{ $author->narraciones_count }} narraciones publicadas</p>
+                </div>
+              </div>
+              
+              @php
+                $isFollowing = Auth::user()->following()->where('followed_id', $author->id)->exists();
+              @endphp
+              
+              <button 
+                onclick="toggleFollow({{ $author->id }}, this)"
+                class="follow-toggle-btn inline-flex items-center px-4 py-2 text-sm font-sans rounded-lg transition-colors
+                  @if($isFollowing)
+                    bg-green-600 text-white hover:bg-green-700
+                  @else
+                    bg-purple-600 text-white hover:bg-purple-700
+                  @endif
+                "
+                data-following="{{ $isFollowing ? 'true' : 'false' }}"
+                data-author-name="{{ $author->name }}">
+                <i class="bi 
+                  @if($isFollowing)
+                    bi-person-check
+                  @else
+                    bi-person-plus
+                  @endif
+                  mr-2"></i>
+                <span class="follow-text">
+                  @if($isFollowing)
+                    Siguiendo
+                  @else
+                    Seguir
+                  @endif
+                </span>
+              </button>
+            </div>
+          @endforeach
+        </div>
+      @else
         <div class="text-center py-8">
           <i class="bi bi-people text-4xl text-stone-300 mb-4"></i>
-          <p class="text-stone-600 font-sans">Aún no sigues a ningún autor</p>
-          <p class="text-sm text-stone-500 font-sans mt-2">Descubre nuevas narraciones y sigue a sus autores</p>
+          <p class="text-stone-600 font-sans">No hay otros autores disponibles</p>
         </div>
-      </div>
+      @endif
     </div>
   </div>
 
@@ -176,136 +229,37 @@
 </div>
 @endsection
 
-@push('scripts')
+<!-- Scripts -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Cargar autores que sigue el usuario
-    loadFollowingAuthors();
-});
-
-function loadFollowingAuthors() {
-    fetch('/following', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const container = document.getElementById('following-authors');
-        
-        if (data.error) {
-            console.error(data.error);
-            return;
-        }
-        
-        if (data.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8">
-                    <i class="bi bi-people text-4xl text-stone-300 mb-4"></i>
-                    <p class="text-stone-600 font-sans">Aún no sigues a ningún autor</p>
-                    <p class="text-sm text-stone-500 font-sans mt-2">Descubre nuevas narraciones y sigue a sus autores</p>
-                </div>
-            `;
-        } else {
-            container.innerHTML = data.map(author => `
-                <div class="bg-stone-50 rounded-lg p-4 border border-stone-200 hover:shadow-md transition-shadow">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-stone-300 rounded-full flex items-center justify-center mr-3">
-                                <i class="bi bi-person text-stone-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-sans font-medium text-stone-900">${author.name}</h4>
-                                <p class="text-sm text-stone-600">${author.narraciones_count} narraciones</p>
-                            </div>
-                        </div>
-                        <button 
-                            class="unfollow-author-btn text-xs text-red-600 hover:text-red-700 font-sans"
-                            data-author-id="${author.id}">
-                            <i class="bi bi-person-dash"></i>
-                        </button>
-                    </div>
-                    <div class="text-xs text-stone-500">
-                        Siguiendo desde ${new Date(author.followed_at).toLocaleDateString()}
-                    </div>
-                </div>
-            `).join('');
-            
-            // Añadir event listeners para botones de unfollow
-            document.querySelectorAll('.unfollow-author-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const authorId = this.dataset.authorId;
-                    const authorCard = this.closest('.bg-stone-50');
-                    
-                    if (confirm('¿Dejar de seguir a este autor?')) {
-                        unfollowAuthor(authorId, authorCard);
-                    }
-                });
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error loading following authors:', error);
-    });
-}
-
-function unfollowAuthor(authorId, authorCard) {
-    fetch(`/unfollow/${authorId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
-        
-        // Animación de salida
-        authorCard.style.opacity = '0';
-        authorCard.style.transform = 'scale(0.9)';
-        
-        setTimeout(() => {
-            authorCard.remove();
-            
-            // Recargar la lista si no quedan autores
-            const remainingAuthors = document.querySelectorAll('#following-authors .bg-stone-50');
-            if (remainingAuthors.length === 0) {
-                loadFollowingAuthors();
-            }
-        }, 300);
-        
-        showToast(data.message);
-    })
-    .catch(error => {
-        console.error('Error unfollowing author:', error);
-        showToast('Error al dejar de seguir al autor');
-    });
-}
-
-function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'fixed bottom-4 right-4 bg-stone-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-    toast.textContent = message;
+function toggleFollow(authorId, button) {
+    // Mostrar alerta temporal mientras se implementa la funcionalidad
+    const authorName = button.dataset.authorName;
+    const isFollowing = button.dataset.following === 'true';
     
-    document.body.appendChild(toast);
+    if (isFollowing) {
+        alert(`Función "Dejar de seguir" en construcción. Próximamente podrás dejar de seguir a ${authorName}.`);
+    } else {
+        alert(`Función "Seguir" en construcción. Próximamente podrás seguir a ${authorName} para acceder a su contenido exclusivo.`);
+    }
     
-    setTimeout(() => {
-        toast.style.opacity = '1';
-    }, 100);
+    // Simulación visual del cambio (temporal)
+    const icon = button.querySelector('i');
+    const text = button.querySelector('.follow-text');
     
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(toast);
-        }, 300);
-    }, 3000);
+    if (!isFollowing) {
+        // Simular que empieza a seguir
+        icon.className = 'bi bi-person-check mr-2';
+        text.textContent = 'Siguiendo';
+        button.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+        button.classList.add('bg-green-600', 'hover:bg-green-700');
+        button.dataset.following = 'true';
+    } else {
+        // Simular que deja de seguir
+        icon.className = 'bi bi-person-plus mr-2';
+        text.textContent = 'Seguir';
+        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+        button.classList.add('bg-purple-600', 'hover:bg-purple-700');
+        button.dataset.following = 'false';
+    }
 }
 </script>
-@endpush

@@ -47,14 +47,12 @@
                 </button>
             @endif
             
-            <!-- Like Button -->
-            <button 
-                id="like-btn" 
-                class="like-btn inline-flex items-center px-4 py-2 bg-red-500 text-white text-sm font-sans rounded-lg hover:bg-red-600 transition-colors"
-                data-narracion-id="{{ $narracion->id }}">
-                <i class="bi bi-heart mr-2"></i>
-                <span>Me Gusta</span>
-            </button>
+            <!-- Feedback Button -->
+            <a href="{{ route('narraciones.feedback', $narracion->slug) }}" 
+               class="inline-flex items-center px-4 py-2 bg-red-500 text-white text-sm font-sans rounded-lg hover:bg-red-600 transition-colors">
+                <span class="material-icons mr-2">feedback</span>
+                <span>Enviar Feedback</span>
+            </a>
             
             <!-- Share Button (placeholder) -->
             <button class="read-more" title="Compartir" onclick="alert('Función de compartir próximamente')">
@@ -119,83 +117,97 @@
 @endsection
 
 @push('scripts')
+<!-- Funciones globales -->
 <script>
+// Función global para cerrar modal
+function closeLikeModal() {
+    const modal = document.getElementById('like-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.classList.remove('overflow-y-hidden');
+    }
+}
+
+// Función global para manejar acciones de like
+function handleLikeAction(action) {
+  const messages = {
+    'love': '¡Te encanta esta narración! ❤️',
+    'like': '¡Te gusta esta narración! 👍',
+    'interesting': '¡Encuentras interesante esta narración! 💡'
+  };
+  
+  // Mostrar mensaje
+  showToast(messages[action]);
+  
+  // Actualizar botón visualmente (con validación)
+  const likeBtn = document.getElementById('like-btn');
+  if (likeBtn) {
+    const icon = likeBtn.querySelector('i');
+    if (icon) {
+      icon.className = 'bi bi-heart-fill mr-2';
+      likeBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+      likeBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+    }
+  }
+  
+  // Cerrar modal
+  closeLikeModal();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de Follow/Unfollow
+    // Funcionalidad de Follow/Unfollow (simplificada con alerta)
     const followBtn = document.getElementById('follow-btn');
     if (followBtn) {
         followBtn.addEventListener('click', function() {
-            const authorId = this.dataset.authorId;
-            const isFollowing = this.dataset.following === 'true';
-            
-            fetch(`/follow/toggle/${authorId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-                
-                // Actualizar estado del botón
-                this.dataset.following = data.following;
-                const icon = this.querySelector('i');
-                const text = this.querySelector('.follow-text');
-                
-                if (data.following) {
-                    icon.className = 'bi bi-person-check mr-2';
-                    text.textContent = 'Siguiendo';
-                    this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-                    this.classList.add('bg-green-600', 'hover:bg-green-700');
-                } else {
-                    icon.className = 'bi bi-person-plus mr-2';
-                    text.textContent = 'Seguir autor';
-                    this.classList.remove('bg-green-600', 'hover:bg-green-700');
-                    this.classList.add('bg-purple-600', 'hover:bg-purple-700');
-                }
-                
-                // Mostrar mensaje
-                showToast(data.message);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error al procesar la solicitud');
-            });
+            alert('Función de seguimiento en construcción. Próximamente podrás seguir a tus autores favoritos.');
         });
     }
     
-    // Funcionalidad de Like
+    // Funcionalidad de Like con modal
     const likeBtn = document.getElementById('like-btn');
     if (likeBtn) {
-        let isLiked = false;
-        
         likeBtn.addEventListener('click', function() {
-            const narracionId = this.dataset.narracionId;
-            const icon = this.querySelector('i');
-            
-            isLiked = !isLiked;
-            
-            if (isLiked) {
-                icon.className = 'bi bi-heart-fill mr-2';
-                this.classList.remove('bg-red-500', 'hover:bg-red-600');
-                this.classList.add('bg-red-600', 'hover:bg-red-700');
-                showToast('¡Te gusta esta narración!');
-            } else {
-                icon.className = 'bi bi-heart mr-2';
-                this.classList.remove('bg-red-600', 'hover:bg-red-700');
-                this.classList.add('bg-red-500', 'hover:bg-red-600');
-                showToast('Has quitado el "Me Gusta"');
+            // Abrir modal de Me Gusta
+            const modal = document.getElementById('like-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.classList.add('overflow-y-hidden');
             }
-            
-            // Mostrar alerta temporal mientras se implementa la funcionalidad completa
-            showToast('¡Función "Me Gusta" próximamente disponible!');
         });
+    }
+    
+    // Cerrar al hacer clic fuera
+    window.onclick = function(event) {
+        const modal = document.getElementById('like-modal');
+        if (event.target == modal) {
+            closeLikeModal();
+        }
+    }
+    
+    // Event listeners para botones del modal
+    const closeBtn = document.getElementById('close-modal-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeLikeModal);
+    }
+    
+    const loveBtn = document.getElementById('love-btn');
+    if (loveBtn) {
+        loveBtn.addEventListener('click', () => handleLikeAction('love'));
+    }
+    
+    const likeBtnAction = document.getElementById('like-btn-action');
+    if (likeBtnAction) {
+        likeBtnAction.addEventListener('click', () => handleLikeAction('like'));
+    }
+    
+    const interestingBtn = document.getElementById('interesting-btn');
+    if (interestingBtn) {
+        interestingBtn.addEventListener('click', () => handleLikeAction('interesting'));
+    }
+    
+    const cancelBtn = document.getElementById('cancel-modal-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeLikeModal);
     }
 });
 
@@ -221,5 +233,90 @@ function showToast(message) {
         }, 300);
     }, 3000);
 }
+
+function handleLikeAction(action) {
+  const messages = {
+    'love': '¡Te encanta esta narración! ',
+    'like': '¡Te gusta esta narración! ',
+    'interesting': '¡Encuentras interesante esta narración! '
+  };
+  
+  // Mostrar mensaje
+  showToast(messages[action]);
+  
+  // Actualizar botón visualmente
+  const likeBtn = document.getElementById('like-btn');
+  if (likeBtn) {
+    const icon = likeBtn.querySelector('i');
+    icon.className = 'bi bi-heart-fill mr-2';
+    likeBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+    likeBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+  }
+  
+  // Cerrar modal
+  closeLikeModal();
+}
 </script>
 @endpush
+
+<!-- Modal Me Gusta -->
+<div id="like-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" style="display: none;">
+  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-serif font-bold text-stone-900">
+          <i class="bi bi-heart-fill text-red-500 mr-2"></i>
+          Me Gusta
+        </h3>
+        <button id="close-modal-btn" class="text-stone-400 hover:text-stone-600 transition-colors">
+          <i class="bi bi-x-lg text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="text-center py-6">
+        <div class="mb-4">
+          <i class="bi bi-heart text-6xl text-red-500"></i>
+        </div>
+        
+        <h4 class="text-lg font-serif font-medium text-stone-900 mb-2">
+          ¿Te gusta esta narración?
+        </h4>
+        
+        <p class="text-stone-600 mb-6">
+          Tu feedback ayuda al autor a crear más contenido increíble. Próximamente podrás guardar tus preferencias.
+        </p>
+        
+        <div class="space-y-3">
+          <button 
+            id="love-btn"
+            class="w-full inline-flex items-center justify-center px-4 py-3 bg-red-500 text-white font-sans font-medium rounded-lg hover:bg-red-600 transition-colors">
+            <i class="bi bi-heart-fill mr-2"></i>
+            Me encanta ❤️
+          </button>
+          
+          <button 
+            id="like-btn-action"
+            class="w-full inline-flex items-center justify-center px-4 py-3 bg-stone-600 text-white font-sans font-medium rounded-lg hover:bg-stone-700 transition-colors">
+            <i class="bi bi-hand-thumbs-up mr-2"></i>
+            Me gusta 👍
+          </button>
+          
+          <button 
+            id="interesting-btn"
+            class="w-full inline-flex items-center justify-center px-4 py-3 bg-blue-500 text-white font-sans font-medium rounded-lg hover:bg-blue-600 transition-colors">
+            <i class="bi bi-lightbulb mr-2"></i>
+            Interesante 💡
+          </button>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-stone-200">
+          <button 
+            id="cancel-modal-btn"
+            class="text-stone-600 hover:text-stone-800 font-sans text-sm transition-colors">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
