@@ -10,27 +10,11 @@ class NarracionController extends Controller
 {
     public function index()
     {
-        // Obtener narraciones públicas y de seguidores según el usuario
-        $query = Narracion::publicado()
-            ->orderByFecha();
-
-        // Si el usuario está autenticado, mostrar también las de autores que sigue
-        if (auth()->check()) {
-            $followedAuthorIds = auth()->user()->following()->pluck('followed_id');
-            $query->where(function($q) use ($followedAuthorIds) {
-                $q->where('permiso_lectura', 'publico')
-                  ->orWhere(function($subQuery) use ($followedAuthorIds) {
-                      $subQuery->whereIn('user_id', $followedAuthorIds)
-                               ->where('permiso_lectura', 'seguidores');
-                  });
-            });
-        } else {
-            // Si no está autenticado, solo mostrar públicas
-            $query->where('permiso_lectura', 'publico');
-        }
-
-        
-        $narraciones = $query->paginate(6);
+        // Mostrar TODAS las narraciones publicadas (sin filtrar por permisos)
+        // El filtrado por permisos se hace en el método show()
+        $narraciones = Narracion::publicado()
+            ->orderByFecha()
+            ->paginate(6);
         
         return view('narraciones.index-literario', compact('narraciones'));
     }
