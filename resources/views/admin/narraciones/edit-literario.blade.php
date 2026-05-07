@@ -359,7 +359,7 @@
               <input type="radio" 
                      name="permiso_lectura" 
                      value="seguidores" 
-                     {{ old('permiso_lectura') === 'seguidores' ? 'checked' : '' }}
+                     {{ old('permiso_lectura', $narracion->permiso_lectura) === 'seguidores' ? 'checked' : '' }}
                      class="mr-3 text-stone-600 focus:ring-stone-500">
               <div>
                 <div class="font-sans font-medium text-stone-900">Seguidores</div>
@@ -422,11 +422,13 @@
           </div>
           <div class="space-x-4">
             <a href="{{ route('admin.narraciones.index') }}" 
-               class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors no-underline">
+               class="inline-flex items-center px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors shadow-sm no-underline">
+              <i class="bi bi-x-circle icon-sm mr-2"></i>
               Cancelar
             </a>
             <button type="submit" 
-                    class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-700 hover:bg-stone-600 transition-colors">
+                    class="inline-flex items-center px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-700 hover:bg-stone-600 transition-colors shadow-sm">
+              <i class="bi bi-check-circle icon-sm mr-2"></i>
               Actualizar
             </button>
           </div>

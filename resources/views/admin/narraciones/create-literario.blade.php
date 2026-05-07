@@ -184,20 +184,23 @@
       <!-- Actions -->
       <div class="px-8 py-6 bg-stone-100 border-t border-stone-300 flex justify-between">
         <a href="{{ route('admin.narraciones.index') }}" 
-           class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors">
+           class="inline-flex items-center px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors shadow-sm">
+          <i class="bi bi-x-circle icon-sm mr-2"></i>
           Cancelar
         </a>
         <div class="space-x-4">
           <button type="submit" 
                   name="estado" 
                   value="borrador"
-                  class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors">
+                  class="inline-flex items-center px-6 py-3 font-sans text-xs tracking-wider uppercase text-stone-600 bg-white border border-stone-300 hover:bg-stone-50 transition-colors shadow-sm">
+            <i class="bi bi-file-earmark-text icon-sm mr-2"></i>
             Guardar Borrador
           </button>
           <button type="submit" 
                   name="estado" 
                   value="publicado"
-                  class="px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-900 hover:bg-stone-800 transition-colors">
+                  class="inline-flex items-center px-6 py-3 font-sans text-xs tracking-wider uppercase text-white bg-stone-700 hover:bg-stone-600 transition-colors shadow-sm">
+            <i class="bi bi-send icon-sm mr-2"></i>
             Publicar
           </button>
         </div>
