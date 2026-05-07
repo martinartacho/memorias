@@ -26,7 +26,7 @@
         <!-- Stats -->
         <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
           <i class="bi bi-book text-4xl text-stone-600 mb-4"></i>
-          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">0</div>
+          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">{{ Auth::user()->narraciones()->where('estado', 'publicado')->count() }}</div>
           <div class="text-sm text-stone-600 font-sans tracking-wide">NARRACIONES</div>
         </div>
         <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
@@ -109,11 +109,68 @@
         Actividad Reciente
       </h2>
       
-      <div class="text-center py-12">
-        <i class="bi bi-clock-history text-5xl text-stone-300 mb-4"></i>
-        <p class="text-stone-600 font-sans">No hay actividad reciente</p>
-        <p class="text-sm text-stone-500 font-sans mt-2">Tu actividad aparecerá aquí</p>
-      </div>
+      @php
+          $recentNarraciones = Auth::user()->narraciones()
+              ->where('estado', 'publicado')
+              ->orderBy('fecha_publicacion', 'desc')
+              ->take(3)
+              ->get();
+      @endphp
+      
+      @if($recentNarraciones->count() > 0)
+        <div class="space-y-4">
+          @foreach($recentNarraciones as $narracion)
+            <div class="flex items-center p-4 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
+              <div class="flex-shrink-0 mr-4">
+                <div class="w-12 h-12 bg-stone-300 rounded-full flex items-center justify-center">
+                  <i class="bi bi-book text-stone-600"></i>
+                </div>
+              </div>
+              <div class="flex-grow">
+                <h4 class="font-sans font-medium text-stone-900 mb-1">
+                  <a href="{{ route('narraciones.show', $narracion->slug) }}" 
+                     class="text-stone-900 hover:text-blue-600 transition-colors">
+                    {{ $narracion->titulo }}
+                  </a>
+                </h4>
+                <p class="text-sm text-stone-600">
+                  Publicada el {{ $narracion->fecha_publicacion->format('d/m/Y') }}
+                </p>
+                <div class="flex items-center mt-2 space-x-4">
+                  <span class="text-xs px-2 py-1 rounded-full 
+                    @switch($narracion->permiso_lectura)
+                      @case('publico')
+                        bg-blue-100 text-blue-700
+                        @break
+                      @case('seguidores')
+                        bg-purple-100 text-purple-700
+                        @break
+                    @endswitch
+                  ">
+                    @switch($narracion->permiso_lectura)
+                      @case('publico')
+                        <i class="bi bi-globe mr-1"></i> Público
+                        @break
+                      @case('seguidores')
+                        <i class="bi bi-people-fill mr-1"></i> Seguidores
+                        @break
+                    @endswitch
+                  </span>
+                  <span class="text-xs text-stone-500">
+                    <i class="bi bi-eye mr-1"></i> {{ $narracion->count_read }} lecturas
+                  </span>
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @else
+        <div class="text-center py-12">
+          <i class="bi bi-clock-history text-5xl text-stone-300 mb-4"></i>
+          <p class="text-stone-600 font-sans">No hay actividad reciente</p>
+          <p class="text-sm text-stone-500 font-sans mt-2">Tu actividad aparecerá aquí</p>
+        </div>
+      @endif
     </div>
   </div>
 </div>
