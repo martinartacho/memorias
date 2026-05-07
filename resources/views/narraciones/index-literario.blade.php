@@ -35,7 +35,12 @@
       @foreach($narraciones as $key => $narracion)
         <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'">
           <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
-          <div class="card-tag">Narración</div>
+          <div class="card-tag">
+            Narración
+            @if($narracion->permiso_lectura === 'seguidores')
+              <span class="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Seguidores</span>
+            @endif
+          </div>
           <div class="card-title">{{ $narracion->titulo }}</div>
           <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>
           <p class="card-excerpt">{!! Str::limit(strip_tags($narracion->contenido), 120) !!}</p>

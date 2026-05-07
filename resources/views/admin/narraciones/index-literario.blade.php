@@ -67,34 +67,34 @@
             
             <!-- Meta Section -->
             <div class="font-sans text-xs text-stone-500 tracking-wider uppercase mb-4">
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2">
+              <div class="grid grid-cols-4 gap-6 text-center">
                 <div>
-                  <span class="block text-stone-400 mb-1">Publicado:</span>
-                  {{ $narracion->fecha_publicacion->format('d M Y') }}
+                  <div class="text-stone-400 mb-1">Publicado</div>
+                  <div class="text-stone-700 font-medium">{{ $narracion->fecha_publicacion->format('M') }}</div>
                 </div>
                 <div>
-                  <span class="block text-stone-400 mb-1">Orden:</span>
+                  <div class="text-stone-400 mb-1">Orden</div>
                   @if($narracion->orden == 1000)
-                    <span class="text-green-700 font-medium">Preferente</span>
+                    <div class="text-green-700 font-medium">Preferente</div>
                   @else
-                    <span class="text-stone-600">Automático</span>
+                    <div class="text-stone-600">Automático</div>
                   @endif
                 </div>
                 <div>
-                  <span class="block text-stone-400 mb-1">Lectores:</span>
-                  <span class="text-stone-600">{{ $narracion->count_read }}</span>
+                  <div class="text-stone-400 mb-1">Lectores</div>
+                  <div class="text-stone-600">{{ $narracion->count_read }}</div>
                 </div>
                 <div>
-                  <span class="block text-stone-400 mb-1">Permisos:</span>
+                  <div class="text-stone-400 mb-1">Permisos</div>
                   @switch($narracion->permiso_lectura)
                     @case('publico')
-                      <span class="text-blue-700 font-medium">Público</span>
+                      <div class="text-blue-700 font-medium">Público</div>
                       @break
                     @case('seguidores')
-                      <span class="text-purple-700 font-medium">Seguidores</span>
+                      <div class="text-purple-700 font-medium">Seguidores</div>
                       @break
                     @case('privado')
-                      <span class="text-red-700 font-medium">Privado</span>
+                      <div class="text-red-700 font-medium">Privado</div>
                       @break
                   @endswitch
                 </div>

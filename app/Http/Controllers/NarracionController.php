@@ -10,9 +10,24 @@ class NarracionController extends Controller
 {
     public function index()
     {
-        $narraciones = Narracion::publicado()
-            ->orderByFecha()
-            ->paginate(6);
+        // Obtener narraciones públicas y de seguidores según el usuario
+        $query = Narracion::publicado()
+            ->orderByFecha();
+
+        // Si el usuario está autenticado, mostrar también las de autores que sigue
+        if (auth()->check()) {
+            $followedAuthorIds = auth()->user()->following()->pluck('followed_id');
+            $query->where(function($q) use ($followedAuthorIds) {
+                $q->where('permiso_lectura', 'publico')
+                  ->orWhereIn('user_id', $followedAuthorIds)
+                  ->where('permiso_lectura', 'seguidores');
+            });
+        } else {
+            // Si no está autenticado, solo mostrar públicas
+            $query->where('permiso_lectura', 'publico');
+        }
+
+        $narraciones = $query->paginate(6);
         
         return view('narraciones.index-literario', compact('narraciones'));
     }
@@ -22,8 +37,51 @@ class NarracionController extends Controller
         $narracion = Narracion::where('slug', $slug)
             ->publicado()
             ->firstOrFail();
+
+        // Verificar permisos de acceso
+        $canAccess = false;
+        
+        switch($narracion->permiso_lectura) {
+            case 'publico':
+                $canAccess = true;
+                break;
+            case 'seguidores':
+                // Si está autenticado y sigue al autor
+                if (auth()->check()) {
+                    $isFollowing = auth()->user()->following()
+                        ->where('followed_id', $narracion->user_id)
+                        ->exists();
+                    $canAccess = $isFollowing || $narracion->user_id === auth()->id();
+                }
+                break;
+            case 'privado':
+                // Solo el autor puede ver
+                $canAccess = auth()->check() && $narracion->user_id === auth()->id();
+                break;
+        }
+
+        if (!$canAccess) {
+            if ($narracion->permiso_lectura === 'seguidores') {
+                // Redirigir a formulario para seguir al autor
+                return redirect()->route('narraciones.follow-required', $slug);
+            }
+            
+            abort(403, 'No tienes permisos para ver esta narración.');
+        }
+        
+        // Incrementar contador de lecturas
+        $narracion->increment('count_read');
         
         return view('narraciones.show-literario', compact('narracion'));
+    }
+
+    public function followRequired($slug)
+    {
+        $narracion = Narracion::where('slug', $slug)
+            ->publicado()
+            ->firstOrFail();
+        
+        return view('narraciones.follow-required', compact('narracion'));
     }
 
     public function adminIndex()
