@@ -19,8 +19,10 @@ class NarracionController extends Controller
             $followedAuthorIds = auth()->user()->following()->pluck('followed_id');
             $query->where(function($q) use ($followedAuthorIds) {
                 $q->where('permiso_lectura', 'publico')
-                  ->orWhereIn('user_id', $followedAuthorIds)
-                  ->where('permiso_lectura', 'seguidores');
+                  ->orWhere(function($subQuery) use ($followedAuthorIds) {
+                      $subQuery->whereIn('user_id', $followedAuthorIds)
+                               ->where('permiso_lectura', 'seguidores');
+                  });
             });
         } else {
             // Si no está autenticado, solo mostrar públicas

@@ -56,7 +56,7 @@ class NarracionSeeder extends Seeder
                 'contenido' => 'No recuerdo cuándo comenzó, pero sé que no termina. En mis sueños, camino por calles que no conozco pero que siento como mi hogar. Hay una puerta azul siempre entreabierta, y detrás de ella, una voz que me llama por un nombre que no es el mío pero que reconozco como mío. Despierto con el sabor del mar en la boca y la sensación de haber dejado algo importante atrás. Quizás todos somos fragmentos de sueños ajenos, esperando que alguien nos complete.',
                 'slug' => 'fragmentos-de-un-sueno',
                 'fecha_publicacion' => '2024-04-05',
-                'estado' => 'borrador',
+                'estado' => 'publicado',
                 'user_id' => 1,
                 'orden' => 4000,
                 'permiso_lectura' => 'seguidores',
