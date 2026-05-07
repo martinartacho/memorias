@@ -55,11 +55,28 @@
 
   <div class="stories-grid">
     @php
-        $related = \App\Models\Narracion::where('id', '!=', $narracion->id)
+        $relatedQuery = \App\Models\Narracion::where('id', '!=', $narracion->id)
             ->publicado()
-            ->orderByFecha()
-            ->take(3)
-            ->get();
+            ->orderByFecha();
+        
+        // Aplicar misma lógica de permisos que en index
+        if (auth()->check()) {
+            $followedAuthorIds = auth()->user()->following()->pluck('followed_id');
+            $relatedQuery->where(function($q) use ($followedAuthorIds) {
+                $q->where('permiso_lectura', 'publico')
+                  ->orWhere(function($subQuery) use ($followedAuthorIds) {
+                      $subQuery->whereIn('user_id', $followedAuthorIds)
+                               ->where('permiso_lectura', 'seguidores');
+                  });
+            });
+        } else {
+            $relatedQuery->where('permiso_lectura', 'publico');
+        }
+        
+        // NUNCA mostrar narraciones privadas
+        $relatedQuery->where('permiso_lectura', '!=', 'privado');
+        
+        $related = $relatedQuery->take(3)->get();
     @endphp
     @foreach($related as $key => $story)
         <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $story->slug) }}'">

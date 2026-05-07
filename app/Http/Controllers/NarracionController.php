@@ -29,6 +29,9 @@ class NarracionController extends Controller
             $query->where('permiso_lectura', 'publico');
         }
 
+        // NUNCA mostrar narraciones privadas en el listado público
+        $query->where('permiso_lectura', '!=', 'privado');
+
         $narraciones = $query->paginate(6);
         
         return view('narraciones.index-literario', compact('narraciones'));
@@ -39,6 +42,11 @@ class NarracionController extends Controller
         $narracion = Narracion::where('slug', $slug)
             ->publicado()
             ->firstOrFail();
+
+        // Las narraciones privadas NUNCA deben ser accesibles públicamente
+        if ($narracion->permiso_lectura === 'privado') {
+            abort(404, 'Esta narración no está disponible públicamente.');
+        }
 
         // Verificar permisos de acceso
         $canAccess = false;
@@ -55,10 +63,6 @@ class NarracionController extends Controller
                         ->exists();
                     $canAccess = $isFollowing || $narracion->user_id === auth()->id();
                 }
-                break;
-            case 'privado':
-                // Solo el autor puede ver
-                $canAccess = auth()->check() && $narracion->user_id === auth()->id();
                 break;
         }
 
