@@ -35,6 +35,10 @@ Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update']
 Route::get('/profile/password', [App\Http\Controllers\ProfileController::class, 'editPassword'])->middleware('auth')->name('profile.password.edit');
 Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->middleware('auth')->name('profile.password.update');
 
+// Rutas de gestión de cuenta
+Route::get('/account/delete', [App\Http\Controllers\AccountController::class, 'delete'])->middleware('auth')->name('account.delete');
+Route::delete('/account', [App\Http\Controllers\AccountController::class, 'destroy'])->middleware('auth')->name('account.destroy');
+
 // Rutas de administración (protegidas)
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/narraciones', [NarracionController::class, 'adminIndex'])->name('narraciones.index');
