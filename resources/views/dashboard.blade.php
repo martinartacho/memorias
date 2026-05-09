@@ -65,7 +65,7 @@
         Acciones Rápidas
       </h2>
       
-      <div class="grid grid-cols-4 gap-6">
+      <div class="grid grid-cols-5 gap-6">
         @if(Auth::user()->role === 'admin')
         <a href="{{ route('admin.narraciones.index') }}" 
            class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
@@ -79,6 +79,22 @@
            class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
           <i class="bi bi-plus-circle text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
           <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">NUEVA NARRACIÓN</span>
+        </a>
+        @endif
+        
+        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
+        <a href="{{ route('admin.followers') }}" 
+           class="flex flex-col items-center p-8 bg-purple-50 rounded-lg border border-purple-200 hover:shadow-md transition-all text-center group">
+          <span class="material-icons text-4xl text-purple-600 mb-4 group-hover:text-purple-800 transition-colors">people</span>
+          <span class="text-sm font-sans font-medium text-purple-900 tracking-wide uppercase">SEGUIDORES</span>
+        </a>
+        @endif
+        
+        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
+        <a href="{{ route('admin.feedback') }}" 
+           class="flex flex-col items-center p-8 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-md transition-all text-center group">
+          <span class="material-icons text-4xl text-blue-600 mb-4 group-hover:text-blue-800 transition-colors">rate_review</span>
+          <span class="text-sm font-sans font-medium text-blue-900 tracking-wide uppercase">FEEDBACK</span>
         </a>
         @endif
         

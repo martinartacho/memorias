@@ -54,4 +54,11 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::delete('/narraciones/{slug}', [NarracionController::class, 'destroy'])->name('narraciones.destroy');
     Route::post('/narraciones/autosave', [NarracionController::class, 'autosave'])->name('narraciones.autosave');
     Route::post('/narraciones/upload-image', [NarracionController::class, 'uploadImage'])->name('narraciones.uploadImage');
+    
+    // Rutas de gestión de usuarios y feedback
+    Route::get('/followers', [App\Http\Controllers\AdminController::class, 'followers'])->name('followers');
+    Route::get('/feedback', [App\Http\Controllers\AdminController::class, 'feedback'])->name('feedback');
+    Route::post('/feedback/{id}/approve', [App\Http\Controllers\AdminController::class, 'approveFeedback'])->name('feedback.approve');
+    Route::post('/feedback/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectFeedback'])->name('feedback.reject');
+    Route::delete('/feedback/{id}', [App\Http\Controllers\AdminController::class, 'deleteFeedback'])->name('feedback.delete');
 });
