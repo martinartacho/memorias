@@ -50,13 +50,16 @@
         <div class="flex items-center space-x-4">
             <!-- Follow/Unfollow Author Button -->
             @if(auth()->check() && auth()->id() != $narracion->user_id)
+                @php
+                    $isFollowing = auth()->user()->following()->where('followed_id', $narracion->user_id)->exists();
+                @endphp
                 <button 
                     id="follow-btn" 
-                    class="follow-btn inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-sans rounded-lg hover:bg-purple-700 transition-colors"
+                    class="follow-btn inline-flex items-center px-4 py-2 {{ $isFollowing ? 'bg-gray-600 hover:bg-gray-700' : 'bg-purple-600 hover:bg-purple-700' }} text-white text-sm font-sans rounded-lg transition-colors"
                     data-author-id="{{ $narracion->user_id }}"
-                    data-following="{{ auth()->user()->following()->where('followed_id', $narracion->user_id)->exists() ? 'true' : 'false' }}">
-                    <span class="material-icons mr-2">person_add</span>
-                    <span class="follow-text">Seguir autor</span>
+                    data-following="{{ $isFollowing ? 'true' : 'false' }}">
+                    <span class="material-icons mr-2">{{ $isFollowing ? 'person_remove' : 'person_add' }}</span>
+                    <span class="follow-text">{{ $isFollowing ? 'Siguiendo' : 'Seguir autor' }}</span>
                 </button>
             @endif
             
@@ -168,11 +171,67 @@ function handleLikeAction(action) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de Follow/Unfollow (simplificada con alerta)
+    // Funcionalidad de Follow/Unfollow con AJAX
     const followBtn = document.getElementById('follow-btn');
     if (followBtn) {
         followBtn.addEventListener('click', function() {
-            alert('Función de seguimiento en construcción. Próximamente podrás seguir a tus autores favoritos.');
+            const authorId = this.dataset.authorId;
+            const isFollowing = this.dataset.following === 'true';
+            const followText = this.querySelector('.follow-text');
+            const icon = this.querySelector('.material-icons');
+            
+            // Deshabilitar botón durante la petición
+            this.disabled = true;
+            this.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            // Determinar endpoint según estado actual
+            const url = isFollowing ? 
+                `/unfollow/${authorId}` : 
+                `/follow/${authorId}`;
+            
+            // Realizar petición AJAX
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar estado del botón
+                    this.dataset.following = !isFollowing;
+                    
+                    if (isFollowing) {
+                        // Dejó de seguir
+                        icon.textContent = 'person_add';
+                        followText.textContent = 'Seguir autor';
+                        this.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                        this.classList.add('bg-purple-600', 'hover:bg-purple-700');
+                        showToast('Has dejado de seguir a este autor');
+                    } else {
+                        // Empezó a seguir
+                        icon.textContent = 'person_remove';
+                        followText.textContent = 'Siguiendo';
+                        this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                        this.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                        showToast('¡Ahora sigues a este autor!');
+                    }
+                } else {
+                    showToast(data.error || 'Error en la operación', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error de conexión. Inténtalo nuevamente.', 'error');
+            })
+            .finally(() => {
+                // Rehabilitar botón
+                this.disabled = false;
+                this.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
         });
     }
     
@@ -268,6 +327,43 @@ function handleLikeAction(action) {
   
   // Cerrar modal
   closeLikeModal();
+}
+
+// Función para mostrar notificaciones toast
+function showToast(message, type = 'success') {
+  // Crear elemento toast
+  const toast = document.createElement('div');
+  toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
+    type === 'success' 
+      ? 'bg-green-100 border border-green-200 text-green-800' 
+      : 'bg-red-100 border border-red-200 text-red-800'
+  }`;
+  
+  // Agregar icono según tipo
+  const icon = type === 'success' ? 'check_circle' : 'error';
+  toast.innerHTML = `
+    <div class="flex items-center">
+      <span class="material-icons mr-2 text-${type === 'success' ? 'green' : 'red'}-600">${icon}</span>
+      <span>${message}</span>
+    </div>
+  `;
+  
+  // Agregar al DOM
+  document.body.appendChild(toast);
+  
+  // Animar entrada
+  setTimeout(() => {
+    toast.classList.remove('translate-x-full');
+    toast.classList.add('translate-x-0');
+  }, 100);
+  
+  // Remover después de 3 segundos
+  setTimeout(() => {
+    toast.classList.add('translate-x-full');
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 300);
+  }, 3000);
 }
 </script>
 @endpush

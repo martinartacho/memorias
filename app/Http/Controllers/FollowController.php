@@ -41,6 +41,7 @@ class FollowController extends Controller
         ]);
 
         return response()->json([
+            'success' => true,
             'message' => 'Ahora sigues a ' . $author->name,
             'following' => true,
             'followers_count' => $author->followers()->count()
@@ -70,6 +71,7 @@ class FollowController extends Controller
         $follow->delete();
 
         return response()->json([
+            'success' => true,
             'message' => 'Has dejado de seguir a ' . $author->name,
             'following' => false,
             'followers_count' => $author->followers()->count()
