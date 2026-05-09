@@ -43,7 +43,14 @@
                   <span class="material-icons text-blue-600" title="Público">public</span>
                   @break
                 @case('seguidores')
-                  <span class="material-icons text-purple-600" title="Solo seguidores">group</span>
+                  @php
+                    $isFollowing = auth()->check() && auth()->user()->following()->where('followed_id', $narracion->user_id)->exists();
+                  @endphp
+                  @if($isFollowing)
+                    <span class="material-icons text-green-600" title="Acceso permitido - Eres seguidor">lock_open</span>
+                  @else
+                    <span class="material-icons text-red-600" title="Solo seguidores - Necesitas seguir al autor">lock</span>
+                  @endif
                   @break
               @endswitch
             </span>

@@ -171,89 +171,29 @@ function handleLikeAction(action) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de Follow/Unfollow con AJAX
+    // Funcionalidad de Follow/Unfollow con formulario (sin AJAX)
     const followBtn = document.getElementById('follow-btn');
-    console.log('DEBUG: Botón follow encontrado:', followBtn);
     
     if (followBtn) {
-        console.log('DEBUG: Dataset del botón:', followBtn.dataset);
-        
         followBtn.addEventListener('click', function() {
-            console.log('DEBUG: Click en botón follow');
-            
             const authorId = this.dataset.authorId;
             const isFollowing = this.dataset.following === 'true';
-            const followText = this.querySelector('.follow-text');
-            const icon = this.querySelector('.material-icons');
             
-            console.log('DEBUG: authorId:', authorId);
-            console.log('DEBUG: isFollowing:', isFollowing);
-            console.log('DEBUG: CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'));
+            // Crear formulario temporal para enviar petición
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = isFollowing ? `/unfollow/${authorId}` : `/follow/${authorId}`;
             
-            // Deshabilitar botón durante la petición
-            this.disabled = true;
-            this.classList.add('opacity-50', 'cursor-not-allowed');
+            // Agregar CSRF token
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            form.appendChild(csrfToken);
             
-            // Determinar endpoint según estado actual
-            const url = isFollowing ? 
-                `/unfollow/${authorId}` : 
-                `/follow/${authorId}`;
-            
-            console.log('DEBUG: URL:', url);
-            
-            // Realizar petición AJAX
-            console.log('DEBUG: Enviando petición AJAX...');
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => {
-                console.log('DEBUG: Response status:', response.status);
-                console.log('DEBUG: Response ok:', response.ok);
-                return response.json();
-            })
-            .then(data => {
-                console.log('DEBUG: Response data:', data);
-                
-                if (data.success) {
-                    // Actualizar estado del botón
-                    this.dataset.following = !isFollowing;
-                    
-                    if (isFollowing) {
-                        // Dejó de seguir
-                        icon.textContent = 'person_add';
-                        followText.textContent = 'Seguir autor';
-                        this.classList.remove('bg-gray-600', 'hover:bg-gray-700');
-                        this.classList.add('bg-purple-600', 'hover:bg-purple-700');
-                        showToast('Has dejado de seguir a este autor');
-                    } else {
-                        // Empezó a seguir
-                        icon.textContent = 'person_remove';
-                        followText.textContent = 'Siguiendo';
-                        this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-                        this.classList.add('bg-gray-600', 'hover:bg-gray-700');
-                        showToast('¡Ahora sigues a este autor!');
-                    }
-                } else {
-                    showToast(data.error || 'Error en la operación', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('DEBUG: Error en catch:', error);
-                console.error('DEBUG: Error message:', error.message);
-                showToast('Error de conexión. Inténtalo nuevamente.', 'error');
-            })
-            .finally(() => {
-                console.log('DEBUG: Finally - rehabilitando botón');
-                // Rehabilitar botón
-                this.disabled = false;
-                this.classList.remove('opacity-50', 'cursor-not-allowed');
-            });
+            // Enviar formulario
+            document.body.appendChild(form);
+            form.submit();
         });
     }
     
@@ -335,9 +275,6 @@ function handleLikeAction(action) {
     'interesting': '¡Encuentras interesante esta narración! '
   };
   
-  // Mostrar mensaje
-  showToast(messages[action]);
-  
   // Actualizar botón visualmente
   const likeBtn = document.getElementById('like-btn');
   if (likeBtn) {
@@ -349,43 +286,6 @@ function handleLikeAction(action) {
   
   // Cerrar modal
   closeLikeModal();
-}
-
-// Función para mostrar notificaciones toast
-function showToast(message, type = 'success') {
-  // Crear elemento toast
-  const toast = document.createElement('div');
-  toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-    type === 'success' 
-      ? 'bg-green-100 border border-green-200 text-green-800' 
-      : 'bg-red-100 border border-red-200 text-red-800'
-  }`;
-  
-  // Agregar icono según tipo
-  const icon = type === 'success' ? 'check_circle' : 'error';
-  toast.innerHTML = `
-    <div class="flex items-center">
-      <span class="material-icons mr-2 text-${type === 'success' ? 'green' : 'red'}-600">${icon}</span>
-      <span>${message}</span>
-    </div>
-  `;
-  
-  // Agregar al DOM
-  document.body.appendChild(toast);
-  
-  // Animar entrada
-  setTimeout(() => {
-    toast.classList.remove('translate-x-full');
-    toast.classList.add('translate-x-0');
-  }, 100);
-  
-  // Remover después de 3 segundos
-  setTimeout(() => {
-    toast.classList.add('translate-x-full');
-    setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 300);
-  }, 3000);
 }
 </script>
 @endpush
