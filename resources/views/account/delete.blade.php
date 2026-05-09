@@ -25,6 +25,7 @@
 
       <form method="POST" action="{{ route('account.destroy') }}">
         @csrf
+        @method('DELETE')
 
         <div class="mb-6">
           <p class="text-stone-600 mb-4 font-medium">¿Estás seguro de que deseas eliminar tu cuenta?</p>
