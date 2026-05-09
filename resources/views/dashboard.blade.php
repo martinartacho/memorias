@@ -88,11 +88,11 @@
           <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">LEER NARRACIONES</span>
         </a>
         
-        <button onclick="confirmDeleteAccount()" 
-                class="flex flex-col items-center p-8 bg-red-50 rounded-lg border border-red-200 hover:shadow-md transition-all text-center group">
+        <a href="{{ route('account.delete') }}" 
+           class="flex flex-col items-center p-8 bg-red-50 rounded-lg border border-red-200 hover:shadow-md transition-all text-center group">
           <span class="material-icons text-4xl text-red-600 mb-4 group-hover:text-red-800 transition-colors">delete_forever</span>
           <span class="text-sm font-sans font-medium text-red-900 tracking-wide uppercase">ELIMINAR CUENTA</span>
-        </button>
+        </a>
         
         <a href="{{ route('profile.edit') }}" 
            class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
@@ -277,56 +277,5 @@ function toggleFollow(authorId, button) {
     // Enviar formulario
     document.body.appendChild(form);
     form.submit();
-}
-</script>
-
-<!-- Modal de Confirmación de Eliminación -->
-<div id="deleteAccountModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" style="display: none;">
-  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-serif font-bold text-stone-900">
-          <span class="material-icons text-red-500 mr-2">warning</span>
-          Eliminar Cuenta
-        </h3>
-        <button onclick="closeDeleteModal()" class="text-stone-400 hover:text-stone-600 transition-colors">
-          <span class="material-icons text-xl">close</span>
-        </button>
-      </div>
-      
-      <div class="mb-6">
-        <p class="text-stone-600 mb-4">¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es <strong>irreversible</strong> y eliminará:</p>
-        <ul class="list-disc list-inside text-stone-600 space-y-2 ml-4">
-          <li>Tu perfil y datos personales</li>
-          <li>Todas tus narraciones</li>
-          <li>Tus seguidores y seguimientos</li>
-          <li>Tu historial de feedback</li>
-        </ul>
-      </div>
-      
-      <div class="flex space-x-3">
-        <button onclick="closeDeleteModal()" 
-                class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
-          Cancelar
-        </button>
-        <form method="POST" action="{{ route('account.delete') }}" class="flex-1">
-          @csrf
-          <button type="submit" 
-                  class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-            Eliminar Definitivamente
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-function confirmDeleteAccount() {
-  document.getElementById('deleteAccountModal').style.display = 'flex';
-}
-
-function closeDeleteModal() {
-  document.getElementById('deleteAccountModal').style.display = 'none';
 }
 </script>
