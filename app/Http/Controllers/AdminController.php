@@ -15,7 +15,7 @@ class AdminController extends Controller
     public function followers()
     {
         $followers = Follow::with(['follower', 'followed'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('followed_at', 'desc')
             ->paginate(20);
 
         return view('admin.followers', compact('followers'));

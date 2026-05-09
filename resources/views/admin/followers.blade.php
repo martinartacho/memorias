@@ -54,7 +54,7 @@
             @forelse ($followers as $follow)
               <tr class="hover:bg-stone-50 transition-colors">
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                  {{ $follow->created_at->format('d/m/Y H:i') }}
+                  {{ $follow->followed_at->format('d/m/Y H:i') }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
