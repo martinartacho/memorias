@@ -173,12 +173,22 @@ function handleLikeAction(action) {
 document.addEventListener('DOMContentLoaded', function() {
     // Funcionalidad de Follow/Unfollow con AJAX
     const followBtn = document.getElementById('follow-btn');
+    console.log('DEBUG: Botón follow encontrado:', followBtn);
+    
     if (followBtn) {
+        console.log('DEBUG: Dataset del botón:', followBtn.dataset);
+        
         followBtn.addEventListener('click', function() {
+            console.log('DEBUG: Click en botón follow');
+            
             const authorId = this.dataset.authorId;
             const isFollowing = this.dataset.following === 'true';
             const followText = this.querySelector('.follow-text');
             const icon = this.querySelector('.material-icons');
+            
+            console.log('DEBUG: authorId:', authorId);
+            console.log('DEBUG: isFollowing:', isFollowing);
+            console.log('DEBUG: CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'));
             
             // Deshabilitar botón durante la petición
             this.disabled = true;
@@ -189,7 +199,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 `/unfollow/${authorId}` : 
                 `/follow/${authorId}`;
             
+            console.log('DEBUG: URL:', url);
+            
             // Realizar petición AJAX
+            console.log('DEBUG: Enviando petición AJAX...');
+            
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -198,8 +212,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({})
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('DEBUG: Response status:', response.status);
+                console.log('DEBUG: Response ok:', response.ok);
+                return response.json();
+            })
             .then(data => {
+                console.log('DEBUG: Response data:', data);
+                
                 if (data.success) {
                     // Actualizar estado del botón
                     this.dataset.following = !isFollowing;
@@ -224,10 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('DEBUG: Error en catch:', error);
+                console.error('DEBUG: Error message:', error.message);
                 showToast('Error de conexión. Inténtalo nuevamente.', 'error');
             })
             .finally(() => {
+                console.log('DEBUG: Finally - rehabilitando botón');
                 // Rehabilitar botón
                 this.disabled = false;
                 this.classList.remove('opacity-50', 'cursor-not-allowed');
