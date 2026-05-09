@@ -67,4 +67,15 @@ class AdminController extends Controller
 
         return back()->with('success', 'Feedback eliminado permanentemente.');
     }
+
+    /**
+     * Destroy follower relationship
+     */
+    public function destroyFollower($id)
+    {
+        $follow = Follow::findOrFail($id);
+        $follow->delete();
+
+        return back()->with('success', 'Relación de seguimiento eliminada exitosamente.');
+    }
 }
