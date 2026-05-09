@@ -94,7 +94,7 @@
       @php
         // Obtener todos los autores excepto el usuario actual
         $authors = \App\Models\User::where('id', '!=', Auth::id())
-            ->where('role', 'admin') // Solo mostrar autores/admins
+            ->whereIn('role', ['admin', 'editor']) // Mostrar autores, admins y editores
             ->withCount('narraciones')
             ->get();
       @endphp
@@ -232,34 +232,30 @@
 <!-- Scripts -->
 <script>
 function toggleFollow(authorId, button) {
-    // Mostrar alerta temporal mientras se implementa la funcionalidad
     const authorName = button.dataset.authorName;
     const isFollowing = button.dataset.following === 'true';
     
-    if (isFollowing) {
-        alert(`Función "Dejar de seguir" en construcción. Próximamente podrás dejar de seguir a ${authorName}.`);
-    } else {
-        alert(`Función "Seguir" en construcción. Próximamente podrás seguir a ${authorName} para acceder a su contenido exclusivo.`);
-    }
+    // Deshabilitar botón durante la petición
+    button.disabled = true;
+    button.classList.add('opacity-50', 'cursor-not-allowed');
     
-    // Simulación visual del cambio (temporal)
-    const icon = button.querySelector('i');
-    const text = button.querySelector('.follow-text');
+    // Determinar endpoint
+    const url = isFollowing ? `/unfollow/${authorId}` : `/follow/${authorId}`;
     
-    if (!isFollowing) {
-        // Simular que empieza a seguir
-        icon.className = 'bi bi-person-check mr-2';
-        text.textContent = 'Siguiendo';
-        button.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-        button.classList.add('bg-green-600', 'hover:bg-green-700');
-        button.dataset.following = 'true';
-    } else {
-        // Simular que deja de seguir
-        icon.className = 'bi bi-person-plus mr-2';
-        text.textContent = 'Seguir';
-        button.classList.remove('bg-green-600', 'hover:bg-green-700');
-        button.classList.add('bg-purple-600', 'hover:bg-purple-700');
-        button.dataset.following = 'false';
-    }
+    // Crear formulario temporal para enviar petición
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    
+    // Agregar CSRF token
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = '_token';
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    form.appendChild(csrfToken);
+    
+    // Enviar formulario
+    document.body.appendChild(form);
+    form.submit();
 }
 </script>
