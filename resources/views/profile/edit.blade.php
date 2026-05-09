@@ -136,4 +136,36 @@
     </div>
   </div>
 </div>
+
+<!-- Account Deletion Section -->
+<div class="max-w-2xl mx-auto mt-8">
+  <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+    <div class="flex items-center mb-4">
+      <span class="material-icons text-red-600 mr-3">warning</span>
+      <h3 class="text-lg font-serif font-bold text-red-900">
+        Zona de Peligro - Eliminar Cuenta
+      </h3>
+    </div>
+    
+    <p class="text-red-800 mb-6 font-sans">
+      Esta acción es <strong>permanente e irreversible</strong>. Si eliminas tu cuenta, perderás acceso a:
+    </p>
+    
+    <ul class="list-disc list-inside text-red-700 space-y-2 ml-6 mb-6">
+      <li>Todas tus narraciones y su contenido</li>
+      <li>Tus seguidores y las personas que sigues</li>
+      <li>Tu perfil y toda tu información personal</li>
+      <li>Tu historial de feedback y comentarios</li>
+      <li>Tu actividad y estadísticas en la plataforma</li>
+    </ul>
+    
+    <div class="text-center">
+      <a href="{{ route('account.delete') }}" 
+         class="inline-flex items-center px-6 py-3 bg-red-600 text-white font-sans font-medium rounded-lg hover:bg-red-700 transition-colors">
+        <span class="material-icons mr-2">delete_forever</span>
+        Eliminar Mi Cuenta Permanentemente
+      </a>
+    </div>
+  </div>
+</div>
 @endsection

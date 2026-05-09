@@ -88,12 +88,6 @@
           <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">LEER NARRACIONES</span>
         </a>
         
-        <a href="{{ route('account.delete') }}" 
-           class="flex flex-col items-center p-8 bg-red-50 rounded-lg border border-red-200 hover:shadow-md transition-all text-center group">
-          <span class="material-icons text-4xl text-red-600 mb-4 group-hover:text-red-800 transition-colors">delete_forever</span>
-          <span class="text-sm font-sans font-medium text-red-900 tracking-wide uppercase">ELIMINAR CUENTA</span>
-        </a>
-        
         <a href="{{ route('profile.edit') }}" 
            class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
           <i class="bi bi-person text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
