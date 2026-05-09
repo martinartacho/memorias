@@ -135,9 +135,10 @@
       </form>
     </div>
   </div>
-</div>
 
-<!-- Account Deletion Section -->
+
+  <!-- Account Deletion Section -->
+@if(Auth::user()->role !== 'admin')
 <div class="max-w-2xl mx-auto mt-8">
   <div class="bg-red-50 border border-red-200 rounded-lg p-6">
     <div class="flex items-center mb-4">
@@ -151,13 +152,31 @@
       Esta acción es <strong>permanente e irreversible</strong>. Si eliminas tu cuenta, perderás acceso a:
     </p>
     
-    <ul class="list-disc list-inside text-red-700 space-y-2 ml-6 mb-6">
-      <li>Todas tus narraciones y su contenido</li>
-      <li>Tus seguidores y las personas que sigues</li>
-      <li>Tu perfil y toda tu información personal</li>
-      <li>Tu historial de feedback y comentarios</li>
-      <li>Tu actividad y estadísticas en la plataforma</li>
-    </ul>
+    @if(Auth::user()->role === 'editor')
+      <ul class="list-disc list-inside text-red-700 space-y-2 ml-6 mb-6">
+        <li><strong>Todas tus narraciones</strong> y todo su contenido</li>
+        <li><strong>Todos tus seguidores</strong> y las personas que sigues</li>
+        <li><strong>Tu perfil</strong> y toda tu información personal</li>
+        <li><strong>Tu historial completo</strong> de feedback y comentarios</li>
+        <li><strong>Tu actividad</strong> y estadísticas en la plataforma</li>
+        <li class="font-semibold">Como editor, se eliminarán todas tus creaciones literarias</li>
+      </ul>
+    @elseif(Auth::user()->role === 'lector')
+      <ul class="list-disc list-inside text-red-700 space-y-2 ml-6 mb-6">
+        <li><strong>Tus seguidores</strong> (personas que te siguen)</li>
+        <li><strong>Las personas que sigues</strong> (autores que sigues)</li>
+        <li><strong>Tu perfil</strong> y toda tu información personal</li>
+        <li><strong>Todos tus comentarios</strong> y feedback dejados</li>
+        <li><strong>Tu actividad</strong> y estadísticas en la plataforma</li>
+        <li class="font-semibold">Como lector, se eliminarán tus interacciones pero no las narraciones</li>
+      </ul>
+    @else
+      <ul class="list-disc list-inside text-red-700 space-y-2 ml-6 mb-6">
+        <li><strong>Tu perfil</strong> y toda tu información personal</li>
+        <li><strong>Tus seguidores</strong> y las personas que sigues</li>
+        <li><strong>Tu actividad</strong> y estadísticas en la plataforma</li>
+      </ul>
+    @endif
     
     <div class="text-center">
       <a href="{{ route('account.delete') }}" 
@@ -167,5 +186,7 @@
       </a>
     </div>
   </div>
+</div>
+@endif
 </div>
 @endsection
