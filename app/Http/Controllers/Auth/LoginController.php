@@ -45,6 +45,11 @@ class LoginController extends Controller
      */
     public function showLoginForm()
     {
+        // Si viene de registro, mostrar mensaje de éxito
+        if (request()->has('registered')) {
+            session()->flash('success', '¡Cuenta creada exitosamente! Por favor inicia sesión con tus credenciales.');
+        }
+        
         return view('auth.login');
     }
 }
