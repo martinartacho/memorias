@@ -17,11 +17,11 @@
         <span class="ml-3">
           @switch($narracion->permiso_lectura)
             @case('publico')
-              <i class="bi bi-globe text-blue-600" title="Público"></i>
+              <span class="material-icons text-blue-600" title="Público">public</span>
               <span class="text-blue-600 text-sm ml-1">Público</span>
               @break
             @case('seguidores')
-              <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
+              <span class="material-icons text-purple-600" title="Solo seguidores">group</span>
               <span class="text-purple-600 text-sm ml-1">Solo seguidores</span>
               @break
           @endswitch
@@ -42,7 +42,7 @@
                     class="follow-btn inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-sans rounded-lg hover:bg-purple-700 transition-colors"
                     data-author-id="{{ $narracion->user_id }}"
                     data-following="{{ auth()->user()->following()->where('followed_id', $narracion->user_id)->exists() ? 'true' : 'false' }}">
-                    <i class="bi bi-person-plus mr-2"></i>
+                    <span class="material-icons mr-2">person_add</span>
                     <span class="follow-text">Seguir autor</span>
                 </button>
             @endif
@@ -86,10 +86,10 @@
             <span class="ml-2">
               @switch($story->permiso_lectura)
                 @case('publico')
-                  <i class="bi bi-globe text-blue-600" title="Público"></i>
+                  <span class="material-icons text-blue-600" title="Público">public</span>
                   @break
                 @case('seguidores')
-                  <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
+                  <span class="material-icons text-purple-600" title="Solo seguidores">group</span>
                   @break
               @endswitch
             </span>
@@ -144,7 +144,7 @@ function handleLikeAction(action) {
   if (likeBtn) {
     const icon = likeBtn.querySelector('i');
     if (icon) {
-      icon.className = 'bi bi-heart-fill mr-2';
+      icon.textContent = 'favorite';
       likeBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
       likeBtn.classList.add('bg-red-600', 'hover:bg-red-700');
     }
@@ -248,7 +248,7 @@ function handleLikeAction(action) {
   const likeBtn = document.getElementById('like-btn');
   if (likeBtn) {
     const icon = likeBtn.querySelector('i');
-    icon.className = 'bi bi-heart-fill mr-2';
+    icon.textContent = 'favorite';
     likeBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
     likeBtn.classList.add('bg-red-600', 'hover:bg-red-700');
   }
@@ -265,17 +265,17 @@ function handleLikeAction(action) {
     <div class="p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-serif font-bold text-stone-900">
-          <i class="bi bi-heart-fill text-red-500 mr-2"></i>
+          <span class="material-icons text-red-500 mr-2">favorite</span>
           Me Gusta
         </h3>
         <button id="close-modal-btn" class="text-stone-400 hover:text-stone-600 transition-colors">
-          <i class="bi bi-x-lg text-xl"></i>
+          <span class="material-icons text-xl">close</span>
         </button>
       </div>
       
       <div class="text-center py-6">
         <div class="mb-4">
-          <i class="bi bi-heart text-6xl text-red-500"></i>
+          <span class="material-icons text-6xl text-red-500">favorite</span>
         </div>
         
         <h4 class="text-lg font-serif font-medium text-stone-900 mb-2">
@@ -290,21 +290,21 @@ function handleLikeAction(action) {
           <button 
             id="love-btn"
             class="w-full inline-flex items-center justify-center px-4 py-3 bg-red-500 text-white font-sans font-medium rounded-lg hover:bg-red-600 transition-colors">
-            <i class="bi bi-heart-fill mr-2"></i>
+            <span class="material-icons mr-2">favorite</span>
             Me encanta ❤️
           </button>
           
           <button 
             id="like-btn-action"
             class="w-full inline-flex items-center justify-center px-4 py-3 bg-stone-600 text-white font-sans font-medium rounded-lg hover:bg-stone-700 transition-colors">
-            <i class="bi bi-hand-thumbs-up mr-2"></i>
+            <span class="material-icons mr-2">thumb_up</span>
             Me gusta 👍
           </button>
           
           <button 
             id="interesting-btn"
             class="w-full inline-flex items-center justify-center px-4 py-3 bg-blue-500 text-white font-sans font-medium rounded-lg hover:bg-blue-600 transition-colors">
-            <i class="bi bi-lightbulb mr-2"></i>
+            <span class="material-icons mr-2">lightbulb</span>
             Interesante 💡
           </button>
         </div>

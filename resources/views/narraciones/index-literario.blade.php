@@ -40,10 +40,10 @@
             <span class="ml-2">
               @switch($narracion->permiso_lectura)
                 @case('publico')
-                  <i class="bi bi-globe text-blue-600" title="Público"></i>
+                  <span class="material-icons text-blue-600" title="Público">public</span>
                   @break
                 @case('seguidores')
-                  <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
+                  <span class="material-icons text-purple-600" title="Solo seguidores">group</span>
                   @break
               @endswitch
             </span>
