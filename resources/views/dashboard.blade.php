@@ -4,6 +4,20 @@
 
 @section('content')
 <div class="container">
+  <!-- Alert Messages -->
+  @if(session('success'))
+    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
+      <span class="material-icons text-green-600 mr-2">check_circle</span>
+      {{ session('success') }}
+    </div>
+  @endif
+  
+  @if(session('error'))
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+      <span class="material-icons text-red-600 mr-2">error</span>
+      {{ session('error') }}
+    </div>
+  @endif
   <!-- Welcome Section -->
   <div class="max-w-4xl mx-auto mb-12">
     <div class="bg-white rounded-lg shadow-sm border border-stone-200 p-8">

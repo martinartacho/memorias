@@ -15,7 +15,11 @@ class FollowController extends Controller
     public function follow($authorId)
     {
         if (!Auth::check()) {
-            return response()->json(['error' => 'Debes estar autenticado'], 401);
+            // Si es AJAX, devolver JSON, si no, redirigir
+            if (request()->expectsJson()) {
+                return response()->json(['error' => 'Debes estar autenticado'], 401);
+            }
+            return redirect()->route('login')->with('error', 'Debes estar autenticado para seguir autores');
         }
 
         $author = User::findOrFail($authorId);
@@ -41,12 +45,18 @@ class FollowController extends Controller
             'followed_at' => now(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Ahora sigues a ' . $author->name,
-            'following' => true,
-            'followers_count' => $author->followers()->count()
-        ], 200);
+        // Si es AJAX, devolver JSON, si no, redirigir al dashboard
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Ahora sigues a ' . $author->name,
+                'following' => true,
+                'followers_count' => $author->followers()->count()
+            ], 200);
+        }
+        
+        return redirect()->route('dashboard')
+            ->with('success', '¡Ahora sigues a ' . $author->name . '!');
     }
 
     /**
@@ -55,7 +65,10 @@ class FollowController extends Controller
     public function unfollow($authorId)
     {
         if (!Auth::check()) {
-            return response()->json(['error' => 'Debes estar autenticado'], 401);
+            if (request()->expectsJson()) {
+                return response()->json(['error' => 'Debes estar autenticado'], 401);
+            }
+            return redirect()->route('login')->with('error', 'Debes estar autenticado para seguir autores');
         }
 
         $author = User::findOrFail($authorId);
@@ -71,12 +84,18 @@ class FollowController extends Controller
 
         $follow->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Has dejado de seguir a ' . $author->name,
-            'following' => false,
-            'followers_count' => $author->followers()->count()
-        ], 200);
+        // Si es AJAX, devolver JSON, si no, redirigir al dashboard
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Has dejado de seguir a ' . $author->name,
+                'following' => false,
+                'followers_count' => $author->followers()->count()
+            ], 200);
+        }
+        
+        return redirect()->route('dashboard')
+            ->with('success', 'Has dejado de seguir a ' . $author->name . '!');
     }
 
     /**
