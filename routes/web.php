@@ -39,6 +39,11 @@ Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 
 Route::get('/account/delete', [App\Http\Controllers\AccountController::class, 'delete'])->middleware('auth')->name('account.delete');
 Route::delete('/account', [App\Http\Controllers\AccountController::class, 'destroy'])->middleware('auth')->name('account.destroy');
 
+// Rutas de verificación de email
+Route::get('/verify-email/{token}', [App\Http\Controllers\EmailVerificationController::class, 'verify'])->name('verify.email');
+Route::get('/verify-email', [App\Http\Controllers\EmailVerificationController::class, 'notice'])->name('verify.notice');
+Route::post('/verify-email/resend', [App\Http\Controllers\EmailVerificationController::class, 'resend'])->name('verify.resend');
+
 // Rutas de administración (protegidas)
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::get('/narraciones', [NarracionController::class, 'adminIndex'])->name('narraciones.index');

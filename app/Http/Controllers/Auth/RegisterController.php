@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class RegisterController extends Controller
 {
@@ -28,7 +29,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/login?registered=true';
+    protected $redirectTo = '/verify-email';
 
     /**
      * Create a new controller instance.
@@ -57,16 +58,39 @@ class RegisterController extends Controller
     /**
      * Create a new user instance after a valid registration.
      *
-     * @return User
+     * @param  array  $data
+     * @return \App\Models\User
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role' => 'lector', // Rol por defecto
+            'role' => 'lector',
+            'email_verification_token' => Str::random(60),
         ]);
+
+        // Enviar email de verificación
+        $this->sendVerificationEmail($user);
+
+        return $user;
+    }
+
+    /**
+     * Send email verification
+     *
+     * @param  \App\Models\User  $user
+     * @return void
+     */
+    protected function sendVerificationEmail($user)
+    {
+        $verificationUrl = route('verify.email', $user->email_verification_token);
+        
+        // Aquí podrías usar un sistema de emails real
+        // Por ahora, guardamos el token en sesión para desarrollo
+        session(['verification_token' => $user->email_verification_token]);
+        session(['verification_email' => $user->email]);
     }
 
     /**
