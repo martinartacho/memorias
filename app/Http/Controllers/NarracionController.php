@@ -114,8 +114,8 @@ class NarracionController extends Controller
                 'ip' => $request->ip(),
             ]);
 
-            return redirect()->back()
-                ->with('success', '¡Gracias por tu feedback! Tu opinión ha sido enviada y será revisada pronto.');
+            return redirect()->route('narraciones.show', $narracion->slug)
+                ->with('success', '<span class="material-icons text-green-600 mr-2">check_circle</span>¡Gracias por tu feedback! Tu opinión ha sido enviada y será revisada pronto.');
 
         } catch (\Exception $e) {
             \Log::error('Error al guardar feedback:', [

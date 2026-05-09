@@ -4,6 +4,19 @@
 
 @section('content')
 <main class="container">
+  <!-- Alert Messages -->
+  @if(session('success'))
+    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
+      {!! session('success') !!}
+    </div>
+  @endif
+  
+  @if(session('error'))
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+      <span class="material-icons text-red-600 mr-2">error</span>
+      {{ session('error') }}
+    </div>
+  @endif
   <div class="featured">
     <div class="featured-meta">
       <div class="section-label">Narración</div>
