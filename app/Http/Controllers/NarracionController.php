@@ -85,7 +85,7 @@ class NarracionController extends Controller
     public function storeFeedback(Request $request)
     {
         $request->validate([
-            'narracion_id' => 'required|exists:narraciones,id',
+            'narracion_id' => 'required|exists:narracions,id',
             'tipo_feedback' => 'required|in:excelente,bueno,regular',
             'comentario' => 'nullable|string|max:1000',
             'email' => 'required|email|max:255',
