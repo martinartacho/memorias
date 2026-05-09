@@ -38,6 +38,7 @@ class FollowController extends Controller
         Follow::create([
             'follower_id' => Auth::id(),
             'followed_id' => $authorId,
+            'followed_at' => now(),
         ]);
 
         return response()->json([

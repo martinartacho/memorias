@@ -9,6 +9,8 @@ class Follow extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'follower_id',
         'followed_id',
