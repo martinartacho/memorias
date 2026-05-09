@@ -46,7 +46,7 @@
       </div>
       
       <div class="mt-8 flex items-center justify-between">
-        <a href="{{ route('narraciones.index') }}" class="read-more">← Volver a todas las narraciones</a>
+        <a href="{{ route('narraciones.index') }}" class="read-more">← Volver</a>
         <div class="flex items-center space-x-4">
             <!-- Follow/Unfollow Author Button -->
             @if(auth()->check() && auth()->id() != $narracion->user_id)
@@ -63,20 +63,6 @@
                 </button>
             @endif
             
-            <!-- Feedback Button -->
-            <a href="{{ route('narraciones.feedback', $narracion->slug) }}" 
-               class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm font-sans rounded-lg hover:bg-blue-600 transition-colors">
-                <span class="material-icons mr-2">thumb_up</span>
-                <span>Valorar</span>
-            </a>
-            
-            <!-- Share Button (placeholder) -->
-            <button class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-sm font-sans rounded-lg hover:bg-gray-600 transition-colors" 
-                    title="Compartir" 
-                    onclick="alert('Función de compartir próximamente')">
-                <span class="material-icons mr-2">share</span>
-                <span>Compartir</span>
-            </button>
         </div>
       </div>
     </div>
