@@ -38,25 +38,34 @@ class FollowController extends Controller
             return response()->json(['message' => 'Ya sigues a este autor'], 200);
         }
 
+        // Verificar si el autor requiere aprobación
+        $requiresApproval = $author->follower_approval;
+        
         // Crear nuevo seguimiento
-        Follow::create([
+        $follow = Follow::create([
             'follower_id' => Auth::id(),
             'followed_id' => $authorId,
             'followed_at' => now(),
+            'approved' => !$requiresApproval, // Aprobado automáticamente si no requiere aprobación
         ]);
 
         // Si es AJAX, devolver JSON, si no, redirigir al dashboard
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Ahora sigues a ' . $author->name,
+                'message' => $requiresApproval 
+                    ? 'Solicitud de seguimiento enviada a ' . $author->name . '. Espera su aprobación.'
+                    : 'Ahora sigues a ' . $author->name,
                 'following' => true,
+                'approved' => !$requiresApproval,
                 'followers_count' => $author->followers()->count()
             ], 200);
         }
         
         return redirect()->route('dashboard')
-            ->with('success', '¡Ahora sigues a ' . $author->name . '!');
+            ->with('success', $requiresApproval 
+                ? '¡Solicitud de seguimiento enviada a ' . $author->name . '! Espera su aprobación.'
+                : '¡Ahora sigues a ' . $author->name . '!');
     }
 
     /**

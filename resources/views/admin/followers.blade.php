@@ -46,6 +46,9 @@
                 Seguido
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                Estado
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                 Acciones
               </th>
             </tr>
@@ -84,16 +87,41 @@
                     </div>
                   </div>
                 </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  @if($follow->approved)
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span class="material-icons text-xs mr-1">check_circle</span>
+                      Aprobado
+                    </span>
+                  @else
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <span class="material-icons text-xs mr-1">pending</span>
+                      Pendiente
+                    </span>
+                  @endif
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <div class="flex space-x-2">
-                    <a href="{{ route('profile.edit') }}" class="text-purple-600 hover:text-purple-900">
-                      <span class="material-icons text-sm">visibility</span>
-                    </a>
+                    @if(!$follow->approved)
+                      <form method="POST" action="{{ route('admin.followers.approve', $follow->id) }}">
+                        @csrf
+                        <button type="submit" class="text-green-600 hover:text-green-900" title="Aprobar">
+                          <span class="material-icons text-sm">check</span>
+                        </button>
+                      </form>
+                      <form method="POST" action="{{ route('admin.followers.reject', $follow->id) }}" 
+                            onsubmit="return confirm('¿Estás seguro de rechazar esta solicitud?')">
+                        @csrf
+                        <button type="submit" class="text-yellow-600 hover:text-yellow-900" title="Rechazar">
+                          <span class="material-icons text-sm">close</span>
+                        </button>
+                      </form>
+                    @endif
                     <form method="POST" action="{{ route('admin.followers.destroy', $follow->id) }}" 
                           onsubmit="return confirm('¿Estás seguro de eliminar esta relación de seguimiento?')">
                       @csrf
                       @method('DELETE')
-                      <button type="submit" class="text-red-600 hover:text-red-900">
+                      <button type="submit" class="text-red-600 hover:text-red-900" title="Eliminar">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </form>
@@ -102,7 +130,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="4" class="px-6 py-12 text-center text-stone-500">
+                <td colspan="5" class="px-6 py-12 text-center text-stone-500">
                   <span class="material-icons text-4xl text-stone-300 mb-2">people_outline</span>
                   <p class="text-lg font-medium">No hay relaciones de seguimiento</p>
                   <p class="text-sm text-stone-400">Los usuarios aún no han comenzado a seguirse entre sí</p>

@@ -122,8 +122,20 @@
       </h2>
       
       @php
-        // Obtener todos los autores excepto el usuario actual
+        // Obtener autores que no requieren aprobación o ya están aprobados
         $authors = \App\Models\User::where('id', '!=', Auth::id())
+            ->where(function($query) {
+                $query->where('follower_approval', false) // No requiere aprobación
+                      ->orWhere(function($subQuery) {
+                          // Ya está aprobado por el usuario actual
+                          $subQuery->whereExists(function($existsQuery) {
+                              $existsQuery->select(\DB::raw(1))
+                                       ->from('follows')
+                                       ->whereRaw('follows.followed_id = users.id')
+                                       ->where('follows.follower_id', Auth::id());
+                          });
+                      });
+            })
             ->whereIn('role', ['admin', 'editor']) // Mostrar autores, admins y editores
             ->withCount('narraciones')
             ->get();

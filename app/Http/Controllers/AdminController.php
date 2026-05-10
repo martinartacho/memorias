@@ -78,4 +78,27 @@ class AdminController extends Controller
 
         return back()->with('success', 'Relación de seguimiento eliminada exitosamente.');
     }
+
+    /**
+     * Approve follower request
+     */
+    public function approveFollower($id)
+    {
+        $follow = Follow::findOrFail($id);
+        $follow->approved = true;
+        $follow->save();
+
+        return back()->with('success', 'Solicitud de seguimiento aprobada.');
+    }
+
+    /**
+     * Reject follower request
+     */
+    public function rejectFollower($id)
+    {
+        $follow = Follow::findOrFail($id);
+        $follow->delete(); // Eliminar la solicitud
+
+        return back()->with('success', 'Solicitud de seguimiento rechazada.');
+    }
 }

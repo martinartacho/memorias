@@ -58,6 +58,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     // Rutas de gestión de usuarios y feedback
     Route::get('/followers', [App\Http\Controllers\AdminController::class, 'followers'])->name('followers');
     Route::delete('/followers/{id}', [App\Http\Controllers\AdminController::class, 'destroyFollower'])->name('followers.destroy');
+    Route::post('/followers/{id}/approve', [App\Http\Controllers\AdminController::class, 'approveFollower'])->name('followers.approve');
+    Route::post('/followers/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectFollower'])->name('followers.reject');
     Route::get('/feedback', [App\Http\Controllers\AdminController::class, 'feedback'])->name('feedback');
     Route::post('/feedback/{id}/approve', [App\Http\Controllers\AdminController::class, 'approveFeedback'])->name('feedback.approve');
     Route::post('/feedback/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectFeedback'])->name('feedback.reject');

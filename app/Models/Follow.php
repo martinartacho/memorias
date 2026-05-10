@@ -15,10 +15,12 @@ class Follow extends Model
         'follower_id',
         'followed_id',
         'followed_at',
+        'approved',
     ];
 
     protected $casts = [
         'followed_at' => 'datetime',
+        'approved' => 'boolean',
     ];
 
     // Relación con el usuario que sigue

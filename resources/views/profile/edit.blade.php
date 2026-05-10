@@ -90,6 +90,43 @@
           </p>
         </div>
 
+        <!-- Follower Approval (solo para admin y editor) -->
+        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
+        <div class="mb-6">
+          <label class="block text-sm font-sans font-medium text-stone-700 mb-2">
+            <span class="material-icons text-purple-600 mr-2 text-sm">people</span>
+            Aprobación de Seguidores
+          </label>
+          <div class="flex items-center justify-between p-4 bg-purple-50 rounded-md border border-purple-200">
+            <div class="flex items-center">
+              <span class="material-icons text-purple-600 mr-3">verified_user</span>
+              <div>
+                <span class="text-stone-900 font-sans font-medium">
+                  Requerir aprobación para nuevos seguidores
+                </span>
+                <p class="text-sm text-stone-600 mt-1">
+                  Si está activado, los usuarios que quieran seguirte deberán esperar tu aprobación.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" 
+                       name="follower_approval" 
+                       class="sr-only peer" 
+                       {{ $user->follower_approval ? 'checked' : '' }}
+                       value="1">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+          </div>
+          <p class="mt-2 text-sm text-stone-500 font-sans">
+            <span class="material-icons text-xs mr-1">info</span>
+            Los autores con aprobación activada no aparecerán en la lista de descubrimiento hasta que aprueben sus seguidores.
+          </p>
+        </div>
+        @endif
+
         <!-- Member Since -->
         <div class="mb-6">
           <label class="block text-sm font-sans font-medium text-stone-700 mb-2">
