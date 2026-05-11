@@ -4,13 +4,15 @@
 
 @push('styles')
 <style>
-/* ── FIX: Aislamos el layout del contenedor padre (main.container es grid: 1fr | 2fr) */
+/* ── FIX: Aislamos el layout del contenedor padre (.container es block, no grid) */
 .narraciones-layout {
   display: block !important;
   width: 100% !important;
+  max-width: 100% !important;
   clear: both !important;
-  /* ── KEY FIX: Ocupar ambas columnas del grid padre ── */
-  grid-column: 1 / -1 !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
 /* ── FIX: Definimos el grid explícitamente aquí, no dependemos del CSS padre */
@@ -19,6 +21,8 @@
   grid-template-columns: repeat(3, 1fr) !important;
   gap: 1.5rem !important;
   width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 @media (max-width: 1024px) {
@@ -31,23 +35,26 @@
 .story-card {
   display: block;
   width: 100%;
+  box-sizing: border-box;
 }
 
-/* ── FIX: Featured también debe ocupar ambas columnas del grid padre */
+/* ── FIX: Featured debe ser block para no interferir con su grid interno */
 .featured {
-  grid-column: 1 / -1 !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* ── FIX: Paginación fuera del flujo del grid, siempre ancho completo */
 .pagination-outer {
   display: block !important;
   width: 100% !important;
-  /* Fallback si queda atrapada en un grid padre */
-  grid-column: 1 / -1 !important;
+  max-width: 100% !important;
   clear: both !important;
   text-align: center !important;
   margin-top: 3rem !important;
   padding-top: 2rem !important;
+  box-sizing: border-box !important;
 }
 
 .pagination-outer .pagination {
