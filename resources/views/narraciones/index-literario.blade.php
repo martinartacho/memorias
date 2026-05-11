@@ -4,9 +4,28 @@
 
 @push('styles')
 <style>
+/* ── FIX: Aislamos el layout del contenedor padre (main.container es grid: 1fr | 2fr) */
+.narraciones-layout {
+  display: block !important;
+  width: 100% !important;
+  clear: both !important;
+  /* ── KEY FIX: Ocupar ambas columnas del grid padre ── */
+  grid-column: 1 / -1 !important;
+}
+
+/* ── FIX: Definimos el grid explícitamente aquí, no dependemos del CSS padre */
 .stories-grid {
-  display: block;
-  width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+}
+
+@media (max-width: 1024px) {
+  .stories-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .stories-grid { grid-template-columns: 1fr !important; }
 }
 
 .story-card {
@@ -14,31 +33,40 @@
   width: 100%;
 }
 
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  padding-top: 2rem;
-  margin-top: 2rem;
-  clear: both;
+/* ── FIX: Featured también debe ocupar ambas columnas del grid padre */
+.featured {
+  grid-column: 1 / -1 !important;
 }
 
-/* Asegurar que la paginación bootstrap-4 esté centrada */
-.pagination-container .pagination {
+/* ── FIX: Paginación fuera del flujo del grid, siempre ancho completo */
+.pagination-outer {
+  display: block !important;
+  width: 100% !important;
+  /* Fallback si queda atrapada en un grid padre */
+  grid-column: 1 / -1 !important;
+  clear: both !important;
+  text-align: center !important;
+  margin-top: 3rem !important;
+  padding-top: 2rem !important;
+}
+
+.pagination-outer .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
-.pagination-container .pagination li {
+.pagination-outer .pagination li {
   display: inline-block;
   margin: 0 2px;
 }
 
-.pagination-container .pagination li a,
-.pagination-container .pagination li span {
+.pagination-outer .pagination li a,
+.pagination-outer .pagination li span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -52,13 +80,13 @@
   transition: all 0.2s;
 }
 
-.pagination-container .pagination li.active span {
+.pagination-outer .pagination li.active span {
   background-color: #9333ea;
   color: white;
   border-color: #9333ea;
 }
 
-.pagination-container .pagination li a:hover {
+.pagination-outer .pagination li a:hover {
   background-color: #f3f4f6;
   color: #374151;
 }
@@ -68,12 +96,13 @@
 @section('content')
 <main class="container">
 
-  <!-- FEATURED -->
   @if($narraciones->count() > 0)
     @php
         $featured = $narraciones->first();
         $total_count = $narraciones->total();
     @endphp
+
+    {{-- FEATURED --}}
     <div class="featured">
       <div class="featured-meta">
         <div class="section-label">Destacado</div>
@@ -89,57 +118,61 @@
       </div>
     </div>
 
-    <!-- GRID -->
-    <div class="grid-label">
-      Todas las narraciones <span>{{ $total_count }} textos</span>
-    </div>
+    {{-- ── FIX: Wrapper que aísla grid + paginación del contenedor padre ── --}}
+    <div class="narraciones-layout">
 
-    <div class="stories-grid">
-      @foreach($narraciones as $key => $narracion)
-        <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'">
-          <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
-          <div class="card-tag">
-            Narración
-            <span class="ml-2">
-              @switch($narracion->permiso_lectura)
-                @case('publico')
-                  <span class="material-icons text-blue-600" title="Público">public</span>
-                  @break
-                @case('seguidores')
-                  @php
-                    $isFollowing = auth()->check() && auth()->user()->following()->where('followed_id', $narracion->user_id)->exists();
-                  @endphp
-                  @if($isFollowing)
-                    <span class="material-icons text-green-600" title="Acceso permitido - Eres seguidor">lock_open</span>
-                  @else
-                    <span class="material-icons text-red-600" title="Solo seguidores - Necesitas seguir al autor">lock</span>
-                  @endif
-                  @break
-              @endswitch
-            </span>
+      <div class="grid-label">
+        Todas las narraciones <span>{{ $total_count }} textos</span>
+      </div>
+
+      <div class="stories-grid">
+        @foreach($narraciones as $key => $narracion)
+          <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'">
+            <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
+            <div class="card-tag">
+              Narración
+              <span class="ml-2">
+                @switch($narracion->permiso_lectura)
+                  @case('publico')
+                    <span class="material-icons text-blue-600" title="Público">public</span>
+                    @break
+                  @case('seguidores')
+                    @php
+                      $isFollowing = auth()->check() && auth()->user()->following()->where('followed_id', $narracion->user_id)->exists();
+                    @endphp
+                    @if($isFollowing)
+                      <span class="material-icons text-green-600" title="Acceso permitido">lock_open</span>
+                    @else
+                      <span class="material-icons text-red-600" title="Solo seguidores">lock</span>
+                    @endif
+                    @break
+                @endswitch
+              </span>
+            </div>
+            <div class="card-title">{{ $narracion->titulo }}</div>
+            <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>
+            <p class="card-excerpt">{!! Str::limit(strip_tags($narracion->contenido), 120) !!}</p>
           </div>
-          <div class="card-title">{{ $narracion->titulo }}</div>
-          <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>
-          <p class="card-excerpt">{!! Str::limit(strip_tags($narracion->contenido), 120) !!}</p>
-        </div>
-      @endforeach
-    </div>
+        @endforeach
+      </div>
 
-    <!-- Pagination -->
-    <div class="w-full clear-both" style="display: block !important; width: 100% !important; clear: both !important; text-align: center !important; margin-top: 3rem !important;">
+      {{-- ── FIX: Paginación con clase dedicada, sin depender de Tailwind --}}
+      <div class="pagination-outer">
         {{ $narraciones->links('vendor.pagination.bootstrap-4') }}
-    </div>
+      </div>
+
+    </div>{{-- /.narraciones-layout --}}
 
   @else
     <div class="text-center py-20">
-        <div class="text-stone-400 mb-8">
-            <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-            </svg>
-        </div>
-        <h3 class="text-2xl font-serif font-medium text-stone-900 mb-4">No hay narraciones publicadas</h3>
-        <p class="text-stone-600 text-lg">Las primeras historias pronto estarán disponibles.</p>
+      <div class="text-stone-400 mb-8">
+        <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-serif font-medium text-stone-900 mb-4">No hay narraciones publicadas</h3>
+      <p class="text-stone-600 text-lg">Las primeras historias pronto estarán disponibles.</p>
     </div>
   @endif
 
