@@ -126,7 +126,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-container flex justify-center pt-8 mt-12 clear-both">
+    <div class="w-full clear-both" style="display: block !important; width: 100% !important; clear: both !important; text-align: center !important; margin-top: 3rem !important;">
         {{ $narraciones->links('vendor.pagination.bootstrap-4') }}
     </div>
 
