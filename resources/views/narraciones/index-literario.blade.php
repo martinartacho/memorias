@@ -2,6 +2,69 @@
 
 @section('title', 'Narraciones - Memorias sin orden')
 
+@push('styles')
+<style>
+.stories-grid {
+  display: block;
+  width: 100%;
+}
+
+.story-card {
+  display: block;
+  width: 100%;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
+  margin-top: 2rem;
+  clear: both;
+}
+
+/* Asegurar que la paginación bootstrap-4 esté centrada */
+.pagination-container .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.pagination-container .pagination li {
+  display: inline-block;
+  margin: 0 2px;
+}
+
+.pagination-container .pagination li a,
+.pagination-container .pagination li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.pagination-container .pagination li.active span {
+  background-color: #9333ea;
+  color: white;
+  border-color: #9333ea;
+}
+
+.pagination-container .pagination li a:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+</style>
+@endpush
+
 @section('content')
 <main class="container">
 
@@ -63,7 +126,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="mt-12">
+    <div class="pagination-container flex justify-center pt-8 mt-12 clear-both">
         {{ $narraciones->links('vendor.pagination.bootstrap-4') }}
     </div>
 
