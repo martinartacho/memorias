@@ -2,6 +2,36 @@
 
 @section('title', 'Administración - Memorias sin orden')
 
+@push('styles')
+<style>
+.narraciones-container {
+  display: block;
+  width: 100%;
+}
+
+.narracion-item {
+  display: block;
+  width: 100%;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
+  margin-top: 2rem;
+  clear: both;
+}
+
+/* Asegurar que la paginación no flote */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+</style>
+@endpush
+
 @section('content')
 <main class="container">
   <div class="mb-8">
@@ -37,10 +67,10 @@
   </div>
 
   <!-- Narraciones Grid -->
-  <div class="space-y-6">
+  <div class="space-y-6 narraciones-container">
     @if($narraciones->count() > 0)
       @foreach($narraciones as $narracion)
-        <div class="bg-white rounded-lg border border-stone-300 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div class="bg-white rounded-lg border border-stone-300 overflow-hidden hover:shadow-lg transition-shadow duration-300 narracion-item">
           <div class="p-6">
             <!-- Header with Title and Status -->
             <div class="flex items-start justify-between mb-4">
@@ -137,7 +167,7 @@
       @endforeach
 
       <!-- Pagination -->
-      <div class="flex justify-center pt-8">
+      <div class="pagination-container flex justify-center pt-8 mt-8">
         {{ $narraciones->links() }}
       </div>
     @else
