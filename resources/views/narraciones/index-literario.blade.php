@@ -11,7 +11,7 @@
         $featured = $narraciones->first();
         $total_count = $narraciones->total();
     @endphp
-    <div class="featured">
+{{--     <div class="featured">
       <div class="featured-meta">
         <div class="section-label">Destacado</div>
         <div class="featured-number">{{ str_pad($narraciones->firstItem(), 2, '0', STR_PAD_LEFT) }}</div>
@@ -24,7 +24,7 @@
         <p class="dropcap">{!! Str::limit($featured->contenido, 300) !!}</p>
         <a href="{{ route('narraciones.show', $featured->slug) }}" class="read-more">Leer narración →</a>
       </div>
-    </div>
+    </div> --}}
 
     <!-- GRID -->
     <div class="grid-label">
