@@ -62,7 +62,7 @@
           @php $acciones = [
             ['href' => route('admin.narraciones.create'), 'icono' => 'bi-plus-circle',  'color' => 'var(--accent)',    'label' => 'Nueva narración'],
             ['href' => route('admin.users.index'),        'icono' => 'bi-people',       'color' => 'var(--gold)',      'label' => 'Usuarios'],
-            ['href' => route('admin.lineas.index'),       'icono' => 'bi-diagram-3',    'color' => 'var(--ink-muted)', 'label' => 'Líneas argumentales'],
+            ['href' => route('admin.narraciones.index'),  'icono' => 'bi-list-ul',     'color' => 'var(--ink-muted)', 'label' => 'Mis narraciones'],            ['href' => route('admin.lineas.index'),       'icono' => 'bi-diagram-3',    'color' => 'var(--ink-muted)', 'label' => 'Líneas argumentales'],
             ['href' => route('lineas.public'),            'icono' => 'bi-map',          'color' => 'var(--ink-muted)', 'label' => 'Ver líneas'],
             ['href' => route('profile.edit'),             'icono' => 'bi-person',       'color' => 'var(--ink-muted)', 'label' => 'Mi perfil'],
           ]; @endphp

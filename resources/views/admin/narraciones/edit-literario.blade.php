@@ -19,6 +19,9 @@
     align-items: center;
     flex-wrap: nowrap;
     overflow-x: auto;
+    position: sticky;
+    top: 54px; /* altura del sticky-bar superior */
+    z-index: 50;
 }
 
 .editor-btn {
@@ -47,10 +50,23 @@
     border-color: #007bff;
 }
 
-.editor-content {
+/* Contenedor con scroll — el contenteditable no puede scrollear solo */
+.editor-scroll-wrap {
+    height: 520px;
+    overflow-y: scroll;
     border: 1px solid #dee2e6;
+    border-top: none;
     border-radius: 0 0 8px 8px;
-    min-height: 400px;
+    background: white;
+}
+
+.editor-scroll-wrap::-webkit-scrollbar        { width: 10px; }
+.editor-scroll-wrap::-webkit-scrollbar-track  { background: #f1f1f1; }
+.editor-scroll-wrap::-webkit-scrollbar-thumb  { background: #b0b0b0; border-radius: 4px; }
+.editor-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #888; }
+
+.editor-content {
+    min-height: 100%;
     padding: 15px;
     background: white;
     font-family: Georgia, serif;
@@ -60,7 +76,7 @@
     outline: none;
 }
 
-.editor-content:focus {
+.editor-scroll-wrap:focus-within {
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
@@ -301,8 +317,10 @@
                               ✖
                           </button>
                       </div>
-                      <div class="editor-content" id="editor-content" contenteditable="true">
-                          {!! old('contenido', $narracion->contenido) !!}
+                      <div class="editor-scroll-wrap">
+                          <div class="editor-content" id="editor-content" contenteditable="true">
+                              {!! old('contenido', $narracion->contenido) !!}
+                          </div>
                       </div>
                   </div>
               </div>
@@ -649,6 +667,5 @@ function togglePreview() {
         btn.style.color = 'var(--accent)';
     }
 }
-</script>
 </script>
 @endsection
