@@ -131,20 +131,51 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    let listening = false;
-    const recog   = new SR();
-    recog.lang         = 'es-ES';
-    recog.continuous   = true;
+    // Estados: 'idle' | 'listening' | 'paused'
+    let state = 'idle';
+    const recog = new SR();
+    recog.lang           = 'es-ES';
+    recog.continuous     = true;
     recog.interimResults = true;
+
+    /* ── Mapa de puntuación hablada → símbolo ──────────────────────────────
+       Orden importante: frases largas antes que palabras sueltas           */
+    const PUNCT = [
+        [/punto y aparte/gi,            '.\n\n'],
+        [/punto y seguido/gi,           '. '],
+        [/puntos suspensivos/gi,        '… '],
+        [/punto y coma/gi,              '; '],
+        [/punto final/gi,               '. '],
+        [/dos puntos/gi,                ': '],
+        [/signo de interrogaci[oó]n/gi, '? '],
+        [/signo de exclamaci[oó]n/gi,   '! '],
+        [/abrir par[eé]ntesis/gi,       '('],
+        [/cerrar par[eé]ntesis/gi,      ') '],
+        [/abrir comillas/gi,            '«'],
+        [/cerrar comillas/gi,           '» '],
+        [/nuevo p[aá]rrafo/gi,          '\n\n'],
+        [/nueva l[ií]nea/gi,            '\n'],
+        [/\bpunto\b/gi,                 '. '],   // después de "punto y..."
+        [/\bcoma\b/gi,                  ', '],   // después de "punto y coma"
+        [/\binterrogaci[oó]n\b/gi,      '? '],
+        [/\bexclamaci[oó]n\b/gi,        '! '],
+        [/\bgu[ií][oó]n\b/gi,           ' — '],
+    ];
+
+    function applyPunct(text) {
+        let t = text;
+        for (const [re, sym] of PUNCT) t = t.replace(re, sym);
+        return t.replace(/ {2,}/g, ' ').trim();
+    }
 
     /* ── Actualizar contador y habilitar guardar ── */
     function sync() {
         const words = dictated.value.trim().split(/\s+/).filter(w => w).length;
         wcEl.textContent = words + ' palabra' + (words === 1 ? '' : 's');
         const hasText = dictated.value.trim().length > 0;
-        saveBtn.disabled     = !hasText;
-        saveBtn.style.opacity  = hasText ? '1'        : '0.45';
-        saveBtn.style.cursor   = hasText ? 'pointer'  : 'not-allowed';
+        saveBtn.disabled      = !hasText;
+        saveBtn.style.opacity = hasText ? '1'       : '0.45';
+        saveBtn.style.cursor  = hasText ? 'pointer' : 'not-allowed';
         hidden.value = dictated.value;
     }
 
@@ -156,13 +187,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const t = e.results[i][0].transcript;
             e.results[i].isFinal ? (final += t) : (interim += t);
         }
-        interimTxt.textContent      = interim;
-        interimWrap.style.display   = interim ? 'block' : 'none';
+        interimTxt.textContent    = interim;
+        interimWrap.style.display = interim ? 'block' : 'none';
 
         if (final) {
-            const prev   = dictated.value;
-            const space  = prev.length && !/[\s\n]$/.test(prev) ? ' ' : '';
-            dictated.value += space + final.trim();
+            const processed = applyPunct(final);
+            const prev  = dictated.value;
+            // No añadir espacio si el símbolo insertado ya incluye espacio o salto
+            const space = prev.length && !/[\s\n(«]$/.test(prev) && !/^[,\.;:\?!)\»…\n]/.test(processed) ? ' ' : '';
+            dictated.value += space + processed;
             interimTxt.textContent    = '';
             interimWrap.style.display = 'none';
             dictated.scrollTop = dictated.scrollHeight;
@@ -174,40 +207,54 @@ document.addEventListener('DOMContentLoaded', function () {
     recog.onerror = function (e) {
         if (e.error === 'not-allowed')
             alert('Permiso de micrófono denegado. Actívalo en la configuración del navegador.');
-        if (e.error !== 'no-speech') stopListening();
+        if (e.error !== 'no-speech') setState('idle');
     };
 
-    /* ── Al parar: reinicio automático (uso en exterior, sin eco de altavoces) ── */
+    /* ── Al parar por silencio: NO reiniciar (evita eco en móvil)
+          Pasar a estado "paused" para que el usuario retome con un toque ── */
     recog.onend = function () {
-        if (listening) {
-            try { recog.start(); } catch (_) {}
-        }
+        if (state === 'listening') setState('paused');
     };
 
-    /* ── Arrancar ── */
-    function startListening() {
-        recog.start();
-        listening = true;
-        micIcon.className       = 'bi bi-mic-fill';
-        micBtn.style.background = '#dc2626';
-        micBtn.classList.add('listening');
-        micStatus.textContent   = 'Escuchando…';
-        micStatus.style.color   = '#dc2626';
-    }
-
-    /* ── Parar ── */
-    function stopListening() {
-        listening = false;
-        recog.stop();
-        micIcon.className       = 'bi bi-mic';
-        micBtn.style.background = 'var(--ink)';
-        micBtn.classList.remove('listening');
-        micStatus.textContent   = 'Pulsa para continuar';
-        micStatus.style.color   = 'var(--ink-muted)';
+    /* ── Máquina de estados visual ── */
+    function setState(s) {
+        state = s;
         interimWrap.style.display = 'none';
+
+        if (s === 'idle') {
+            micIcon.className       = 'bi bi-mic';
+            micBtn.style.background = 'var(--ink)';
+            micBtn.classList.remove('listening', 'paused-pulse');
+            micStatus.textContent   = 'Pulsa para dictar';
+            micStatus.style.color   = 'var(--ink-muted)';
+
+        } else if (s === 'listening') {
+            micIcon.className       = 'bi bi-mic-fill';
+            micBtn.style.background = '#dc2626';
+            micBtn.classList.add('listening');
+            micBtn.classList.remove('paused-pulse');
+            micStatus.textContent   = 'Escuchando…';
+            micStatus.style.color   = '#dc2626';
+
+        } else if (s === 'paused') {
+            micIcon.className       = 'bi bi-mic';
+            micBtn.style.background = '#d97706';   // ámbar
+            micBtn.classList.remove('listening');
+            micStatus.innerHTML     = 'Pausa por silencio &nbsp;·&nbsp; <strong>Toca para continuar</strong>';
+            micStatus.style.color   = '#d97706';
+        }
     }
 
-    micBtn.addEventListener('click', () => listening ? stopListening() : startListening());
+    micBtn.addEventListener('click', function () {
+        if (state === 'listening') {
+            recog.stop();
+            setState('idle');
+        } else {
+            // idle o paused → arrancar
+            try { recog.start(); setState('listening'); }
+            catch (err) { /* ya corriendo, ignorar */ }
+        }
+    });
 
     /* ── Limpiar ── */
     clearBtn.addEventListener('click', function () {
