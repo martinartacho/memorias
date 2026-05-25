@@ -96,6 +96,47 @@
 
       @endif
 
+      {{-- ── Líneas argumentales: navegación siguiente ── --}}
+      @php
+        $nodosDeEsta = $narracion->nodosLinea()->with(['linea','conexionesSalientes.hasta.narracion'])->get();
+      @endphp
+      @foreach($nodosDeEsta as $nodo)
+        @if($nodo->conexionesSalientes->isNotEmpty())
+          <div style="margin-top:2rem; padding:1.5rem; border:1px solid var(--parchment-dark); background:var(--parchment-mid);">
+            <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:0.75rem;">
+              <i class="bi bi-{{ $nodo->linea->esRamificada() ? 'diagram-3' : 'arrow-right-circle' }}"></i>
+              &nbsp;{{ $nodo->linea->titulo }}
+            </div>
+
+            @if($nodo->linea->esLineal())
+              @php $siguiente = $nodo->conexionesSalientes->first()->hasta; @endphp
+              @if($siguiente?->narracion)
+                <a href="{{ route('narraciones.show', $siguiente->narracion->slug) }}"
+                   style="display:inline-flex; align-items:center; gap:0.5rem; font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--parchment); background:var(--ink); padding:0.65rem 1.25rem; text-decoration:none; transition:background 0.2s;"
+                   onmouseover="this.style.background='var(--accent)'" onmouseout="this.style.background='var(--ink)'">
+                  La historia continúa &nbsp;→&nbsp; <em style="font-style:italic; font-family:var(--serif); text-transform:none; font-size:0.85rem; letter-spacing:0;">{{ $siguiente->narracion->titulo }}</em>
+                </a>
+              @endif
+            @else
+              <div style="font-family:var(--body); font-size:0.9rem; color:var(--ink-soft); margin-bottom:0.75rem;">¿Cómo sigue la historia?</div>
+              <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                @foreach($nodo->conexionesSalientes as $cx)
+                  @if($cx->hasta?->narracion)
+                    <a href="{{ route('narraciones.show', $cx->hasta->narracion->slug) }}"
+                       style="font-family:var(--sans); font-size:0.7rem; border:1px solid var(--ink); color:var(--ink); padding:0.4rem 0.9rem; text-decoration:none; transition:all 0.2s;"
+                       onmouseover="this.style.background='var(--ink)';this.style.color='var(--parchment)'"
+                       onmouseout="this.style.background='transparent';this.style.color='var(--ink)'"
+                       title="{{ $cx->hasta->narracion->titulo }}">
+                      {{ $cx->etiqueta ?: $cx->hasta->narracion->titulo }}
+                    </a>
+                  @endif
+                @endforeach
+              </div>
+            @endif
+          </div>
+        @endif
+      @endforeach
+
       {{-- Navegación inferior --}}
       <div style="margin-top:2.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; border-top:1px solid var(--parchment-dark); padding-top:1.5rem;">
         <a href="{{ route('narraciones.index') }}" class="read-more">← Volver a narraciones</a>
