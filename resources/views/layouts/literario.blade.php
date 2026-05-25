@@ -580,6 +580,13 @@
 <footer>
   <div class="footer-title">Memorias sin orden</div>
   <p>Colección literaria digital · Todos los derechos reservados</p>
+  <p style="margin-top:0.75rem;">
+    <a href="{{ route('releases') }}"
+       style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.2em; color:var(--ink-muted); text-decoration:none; opacity:0.6; transition:opacity 0.2s;"
+       onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+      v{{ config('app.version') }}
+    </a>
+  </p>
 </footer>
 
 <!-- Flash Messages -->

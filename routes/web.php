@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [NarracionController::class, 'index'])->name('home');
 Route::get('/narraciones', [NarracionController::class, 'index'])->name('narraciones.index');
 Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('narraciones.show');
+Route::get('/releases', fn() => view('releases'))->name('releases');
 
 // ─── Suscripción por email (reemplaza el sistema de follow) ─────────────────
 
