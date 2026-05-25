@@ -746,11 +746,18 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         recog.onend = function() {
-            // Si sigue activo (pausa de silencio), reiniciar
-            if (isListening) recog.start();
+            // No reiniciar automáticamente: evita eco al recoger el audio del altavoz
+            if (isListening) {
+                stopDictation();
+                // Aviso breve de que el dictado se pausó por silencio
+                dictateLabel.textContent = 'Dictar (pausa)';
+                setTimeout(() => { dictateLabel.textContent = 'Dictar'; }, 3000);
+            }
         };
 
         function startDictation() {
+            // Detener TTS si está leyendo (evita que el micro recoja el altavoz)
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
             saveCaretPosition();
             recog.start();
             isListening = true;
