@@ -100,6 +100,10 @@ Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 
 // ─── Administración (solo admin/editor) ─────────────────────────────────────
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    // Dictado por voz
+    Route::get('/dictar', [App\Http\Controllers\DictadoController::class, 'index'])->name('dictar');
+    Route::post('/dictar/guardar', [App\Http\Controllers\DictadoController::class, 'guardar'])->name('dictar.guardar');
+
     // Narraciones
     Route::get('/narraciones', [NarracionController::class, 'adminIndex'])->name('narraciones.index');
     Route::get('/narraciones/create', [NarracionController::class, 'create'])->name('narraciones.create');
