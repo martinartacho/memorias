@@ -68,6 +68,19 @@ class Narracion extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** Nodos de líneas argumentales en que participa esta narración */
+    public function nodosLinea()
+    {
+        return $this->hasMany(LineaNarracion::class);
+    }
+
+    /** Líneas argumentales a las que pertenece */
+    public function lineas()
+    {
+        return $this->belongsToMany(Linea::class, 'linea_narracion')
+                    ->withPivot(['etiqueta', 'orden']);
+    }
+
     public function scopeConPermisoLectura($query, $user = null)
     {
         if (!$user) {

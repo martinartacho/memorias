@@ -19,6 +19,9 @@
     align-items: center;
     flex-wrap: nowrap;
     overflow-x: auto;
+    position: sticky;
+    top: 54px; /* altura del sticky-bar superior */
+    z-index: 50;
 }
 
 .editor-btn {
@@ -47,10 +50,23 @@
     border-color: #007bff;
 }
 
-.editor-content {
+/* Contenedor con scroll — el contenteditable no puede scrollear solo */
+.editor-scroll-wrap {
+    height: 520px;
+    overflow-y: scroll;
     border: 1px solid #dee2e6;
+    border-top: none;
     border-radius: 0 0 8px 8px;
-    min-height: 400px;
+    background: white;
+}
+
+.editor-scroll-wrap::-webkit-scrollbar        { width: 10px; }
+.editor-scroll-wrap::-webkit-scrollbar-track  { background: #f1f1f1; }
+.editor-scroll-wrap::-webkit-scrollbar-thumb  { background: #b0b0b0; border-radius: 4px; }
+.editor-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #888; }
+
+.editor-content {
+    min-height: 100%;
     padding: 15px;
     background: white;
     font-family: Georgia, serif;
@@ -60,7 +76,7 @@
     outline: none;
 }
 
-.editor-content:focus {
+.editor-scroll-wrap:focus-within {
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
@@ -164,14 +180,29 @@
 
 @section('content')
 <main class="container">
+
+  {{-- ── BARRA STICKY ── --}}
+  <div id="sticky-bar" style="position:sticky; top:0; z-index:100; background:#fff; border-bottom:1px solid var(--parchment-dark); padding:0.75rem 1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <a href="{{ route('admin.narraciones.index') }}" class="read-more" style="font-size:0.65rem;">← Volver</a>
+      <span style="font-family:var(--serif); font-weight:700; color:var(--ink); font-size:1rem;">{{ Str::limit($narracion->titulo, 45) }}</span>
+    </div>
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+      @if($narracion->estado === 'publicado')
+        <a href="{{ route('narraciones.show', $narracion->slug) }}" target="_blank"
+           style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted); border:1px solid var(--parchment-dark); padding:0.4rem 0.9rem; text-decoration:none;">
+          Ver publicada ↗
+        </a>
+      @endif
+      <button type="submit" form="edit-form"
+              style="background:var(--accent); color:var(--parchment); border:none; padding:0.5rem 1.25rem; font-family:var(--sans); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer;">
+        Actualizar →
+      </button>
+    </div>
+  </div>
+
   <div class="mb-8">
     <div class="flex items-center mb-6">
-      <a href="{{ route('admin.narraciones.index') }}" 
-         class="text-stone-600 hover:text-stone-900 mr-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
-      </a>
       <div>
         <h2 class="text-3xl font-serif font-bold text-stone-900">Editar Narración</h2>
         <p class="text-stone-600 mt-2">Modifica tu historia literaria</p>
@@ -220,10 +251,17 @@
           </div>
           
           <!-- Editor Local con Vista Previa -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div id="editor-wrapper" class="grid grid-cols-1 gap-6">
               <!-- Columna del Editor -->
               <div>
-                  <h3 class="text-lg font-medium text-stone-700 mb-3">Editor</h3>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                    <h3 class="text-lg font-medium text-stone-700" style="margin:0;">Editor</h3>
+                    <button type="button" id="toggle-preview"
+                      style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; background:none; border:1px solid var(--parchment-dark); padding:0.3rem 0.85rem; color:var(--ink-muted); cursor:pointer; display:flex; align-items:center; gap:0.4rem;"
+                      onclick="togglePreview()">
+                      <i class="bi bi-eye" id="preview-icon"></i> Vista previa
+                    </button>
+                  </div>
                   <div class="editor-container">
                       <div class="editor-toolbar">
                           <button type="button" class="editor-btn" data-command="formatBlock" data-value="h1" title="Título 1">
@@ -279,14 +317,16 @@
                               ✖
                           </button>
                       </div>
-                      <div class="editor-content" id="editor-content" contenteditable="true">
-                          {!! old('contenido', $narracion->contenido) !!}
+                      <div class="editor-scroll-wrap">
+                          <div class="editor-content" id="editor-content" contenteditable="true">
+                              {!! old('contenido', $narracion->contenido) !!}
+                          </div>
                       </div>
                   </div>
               </div>
               
-              <!-- Columna de Vista Previa -->
-              <div>
+              <!-- Columna de Vista Previa (oculta por defecto) -->
+              <div id="preview-col" style="display:none;">
                   <h3 class="text-lg font-medium text-stone-700 mb-3">Vista Previa</h3>
                   <div class="preview-container border border-stone-300 rounded-lg bg-white p-6 min-h-[400px] prose prose-lg max-w-none">
                       <div id="preview-content" class="font-serif text-lg leading-relaxed text-stone-800">
@@ -600,6 +640,32 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Editor local inicializado correctamente');
 });
-</script>
+
+function togglePreview() {
+    const col     = document.getElementById('preview-col');
+    const wrapper = document.getElementById('editor-wrapper');
+    const icon    = document.getElementById('preview-icon');
+    const btn     = document.getElementById('toggle-preview');
+    const visible = col.style.display !== 'none';
+
+    if (visible) {
+        // Ocultar
+        col.style.display = 'none';
+        wrapper.style.gridTemplateColumns = '1fr';
+        icon.className = 'bi bi-eye';
+        btn.style.borderColor = 'var(--parchment-dark)';
+        btn.style.color = 'var(--ink-muted)';
+    } else {
+        // Mostrar — actualizar contenido y expandir a 2 columnas
+        document.getElementById('preview-content').innerHTML =
+            document.getElementById('editor-content').innerHTML;
+        col.style.display = 'block';
+        wrapper.style.gridTemplateColumns = '1fr 1fr';
+        wrapper.style.gap = '1.5rem';
+        icon.className = 'bi bi-eye-fill';
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.color = 'var(--accent)';
+    }
+}
 </script>
 @endsection

@@ -113,4 +113,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Usuarios (solo admin)
     Route::get('/users', [App\Http\Controllers\UserController::class, 'index'])->name('users.index');
     Route::patch('/users/{user}/role', [App\Http\Controllers\UserController::class, 'updateRole'])->name('users.role');
+
+    // Líneas argumentales (admin + editor sobre las propias)
+    Route::get('/lineas', [App\Http\Controllers\LineaController::class, 'index'])->name('lineas.index');
+    Route::get('/lineas/create', [App\Http\Controllers\LineaController::class, 'create'])->name('lineas.create');
+    Route::post('/lineas', [App\Http\Controllers\LineaController::class, 'store'])->name('lineas.store');
+    Route::get('/lineas/{linea}/edit', [App\Http\Controllers\LineaController::class, 'edit'])->name('lineas.edit');
+    Route::put('/lineas/{linea}', [App\Http\Controllers\LineaController::class, 'update'])->name('lineas.update');
+    Route::delete('/lineas/{linea}', [App\Http\Controllers\LineaController::class, 'destroy'])->name('lineas.destroy');
+    // Nodos
+    Route::post('/lineas/{linea}/nodos', [App\Http\Controllers\LineaController::class, 'addNodo'])->name('lineas.nodos.add');
+    Route::delete('/lineas/{linea}/nodos/{nodo}', [App\Http\Controllers\LineaController::class, 'removeNodo'])->name('lineas.nodos.remove');
+    // Conexiones
+    Route::post('/lineas/{linea}/conexiones', [App\Http\Controllers\LineaController::class, 'addConexion'])->name('lineas.conexiones.add');
+    Route::delete('/lineas/{linea}/conexiones/{conexion}', [App\Http\Controllers\LineaController::class, 'removeConexion'])->name('lineas.conexiones.remove');
 });
+
+// Índice público de líneas argumentales
+Route::get('/lineas', [App\Http\Controllers\LineaController::class, 'publicIndex'])->name('lineas.public');

@@ -517,6 +517,9 @@
     <li><a href="{{ route('narraciones.index') }}" class="{{ request()->is('narraciones*') ? 'active' : '' }}">
       <i class="bi bi-book"></i> Narraciones
     </a></li>
+    <li><a href="{{ route('lineas.public') }}" class="{{ request()->is('lineas') ? 'active' : '' }}">
+      <i class="bi bi-diagram-3"></i> Líneas
+    </a></li>
 
     @auth
       {{-- ── Usuario autenticado ── --}}
