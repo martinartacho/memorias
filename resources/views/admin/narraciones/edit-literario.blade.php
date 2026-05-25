@@ -401,14 +401,25 @@
               </div>
             </label>
             <label class="flex items-center p-4 border border-stone-300 rounded-lg cursor-pointer hover:bg-stone-50">
-              <input type="radio" 
-                     name="estado" 
-                     value="publicado" 
+              <input type="radio"
+                     name="estado"
+                     value="publicado"
                      {{ old('estado', $narracion->estado) === 'publicado' ? 'checked' : '' }}
                      class="mr-3 text-stone-600 focus:ring-stone-500">
               <div>
                 <div class="font-sans font-medium text-stone-900">Publicado</div>
-                <div class="font-sans text-sm text-stone-600">Visible públicamente</div>
+                <div class="font-sans text-sm text-stone-600">Visible públicamente · Texto completo</div>
+              </div>
+            </label>
+            <label class="flex items-center p-4 border border-amber-200 bg-amber-50 rounded-lg cursor-pointer hover:bg-amber-100">
+              <input type="radio"
+                     name="estado"
+                     value="promocion"
+                     {{ old('estado', $narracion->estado) === 'promocion' ? 'checked' : '' }}
+                     class="mr-3 text-amber-600 focus:ring-amber-500">
+              <div>
+                <div class="font-sans font-medium text-amber-900">Promoción</div>
+                <div class="font-sans text-sm text-amber-700">Visible · Solo muestra los primeros 100 caracteres</div>
               </div>
             </label>
           </div>

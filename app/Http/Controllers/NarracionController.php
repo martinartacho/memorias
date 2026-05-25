@@ -2,97 +2,150 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Narracion;
+use App\Models\Subscriber;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class NarracionController extends Controller
 {
-    public function index()
-    {
-        // Obtener narraciones públicas y de seguidores según el usuario
-        $query = Narracion::publicado()
-            ->orderByFecha();
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers de permisos
+    // ─────────────────────────────────────────────────────────────────────────
 
-        // Si el usuario está autenticado, mostrar también las de autores que sigue
-        if (auth()->check()) {
-            $followedAuthorIds = auth()->user()->following()->pluck('followed_id');
-            $query->where(function($q) use ($followedAuthorIds) {
-                $q->where('permiso_lectura', 'publico')
-                  ->orWhere(function($subQuery) use ($followedAuthorIds) {
-                      $subQuery->whereIn('user_id', $followedAuthorIds)
-                               ->where('permiso_lectura', 'seguidores');
-                  });
-            });
+    /**
+     * Devuelve true si la cookie del request corresponde a un suscriptor verificado.
+     */
+    private function esSubscritorVerificado(Request $request): bool
+    {
+        return Subscriber::tokenIsValid($request->cookie('subscriber_token'));
+    }
+
+    /**
+     * Devuelve true si el usuario autenticado puede administrar.
+     */
+    private function esAdmin(): bool
+    {
+        return auth()->check() && auth()->user()->canAccessAdmin();
+    }
+
+    /**
+     * Verifica que el usuario tiene permiso para editar/borrar esta narración.
+     * Admin: acceso total. Editor: solo sus propias narraciones.
+     */
+    private function autorizarEdicion(Narracion $narracion): void
+    {
+        $user = auth()->user();
+        if ($user->isEditor() && $narracion->user_id !== $user->id) {
+            abort(403, 'Solo puedes editar tus propias narraciones.');
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Listado público
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function index(Request $request)
+    {
+        $esSubscriptor = $this->esSubscritorVerificado($request);
+        $esAdmin       = $this->esAdmin();
+        $hoy           = now()->toDateString();
+
+        // Base: publicado + promocion, ordenado por fecha
+        $query = Narracion::visible()->orderByFecha();
+
+        // Fechas futuras: solo las ve el admin (para preview)
+        if (!$esAdmin) {
+            $query->where('fecha_publicacion', '<=', $hoy);
+        }
+
+        // Filtro de permiso_lectura según rol
+        if ($esAdmin) {
+            // Admin ve todo: público + seguidores + privado
+        } elseif ($esSubscriptor) {
+            $query->where('permiso_lectura', '!=', 'privado');
         } else {
-            // Si no está autenticado, solo mostrar públicas
             $query->where('permiso_lectura', 'publico');
         }
 
-        // NUNCA mostrar narraciones privadas en el listado público
-        $query->where('permiso_lectura', '!=', 'privado');
+        // Narración destacada: mayor orden, publicada (no promocion), fecha pasada
+        $featured = Narracion::publicado()
+            ->where('permiso_lectura', 'publico')
+            ->where('fecha_publicacion', '<=', $hoy)
+            ->orderBy('orden', 'desc')
+            ->orderByFecha()
+            ->first();
 
-        $narraciones = $query->paginate(6);
-        
-        return view('narraciones.index-literario', compact('narraciones'));
+        $narraciones = $query->paginate(6)->withQueryString();
+
+        // Títulos ocultos para visitantes anónimos (teaser de seguidores)
+        $ocultas = collect();
+        if (!$esAdmin && !$esSubscriptor) {
+            $ocultas = Narracion::publicado()
+                ->where('permiso_lectura', 'seguidores')
+                ->where('fecha_publicacion', '<=', $hoy)
+                ->orderByFecha()
+                ->pluck('titulo');
+        }
+
+        return view('narraciones.index-literario',
+            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas'));
     }
 
-    public function show($slug)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Detalle de narración
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function show(Request $request, $slug)
     {
+        // Buscar en publicado + promocion
         $narracion = Narracion::where('slug', $slug)
-            ->publicado()
+            ->visible()
             ->firstOrFail();
 
-        // Las narraciones privadas NUNCA deben ser accesibles públicamente
-        if ($narracion->permiso_lectura === 'privado') {
-            abort(404, 'Esta narración no está disponible públicamente.');
+        $esAdmin = $this->esAdmin();
+
+        // Admin ve todo sin restricciones
+        if ($esAdmin) {
+            return view('narraciones.show-literario', compact('narracion'));
         }
 
-        // Verificar permisos de acceso
-        $canAccess = false;
-        
-        switch($narracion->permiso_lectura) {
-            case 'publico':
-                $canAccess = true;
-                break;
-            case 'seguidores':
-                // Si está autenticado y sigue al autor
-                if (auth()->check()) {
-                    $isFollowing = auth()->user()->following()
-                        ->where('followed_id', $narracion->user_id)
-                        ->exists();
-                    $canAccess = $isFollowing || $narracion->user_id === auth()->id();
-                }
-                break;
+        // Privadas: nunca accesibles públicamente
+        if ($narracion->permiso_lectura === 'privado') {
+            abort(404);
         }
+
+        $canAccess = match ($narracion->permiso_lectura) {
+            'publico'    => true,
+            'seguidores' => $this->esSubscritorVerificado($request),
+            default      => false,
+        };
 
         if (!$canAccess) {
-            if ($narracion->permiso_lectura === 'seguidores') {
-                // Redirigir a formulario para seguir al autor
-                return redirect()->route('narraciones.follow-required', $slug);
-            }
-            
-            abort(403, 'No tienes permisos para ver esta narración.');
+            return redirect()->route('suscripcion.form', ['slug' => $slug]);
         }
-        
-        // Incrementar contador de lecturas
+
+        // Promocion: acceso permitido pero contenido limitado en la vista
         $narracion->increment('count_read');
-        
+
         return view('narraciones.show-literario', compact('narracion'));
     }
 
-    public function followRequired($slug)
-    {
-        $narracion = Narracion::where('slug', $slug)
-            ->publicado()
-            ->firstOrFail();
-        
-        return view('narraciones.follow-required', compact('narracion'));
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Administración
+    // ─────────────────────────────────────────────────────────────────────────
 
     public function adminIndex()
     {
-        $narraciones = Narracion::orderByFecha()->paginate(10);
+        $user  = auth()->user();
+        $query = Narracion::orderByFecha();
+
+        // Editor: solo sus propias narraciones
+        if ($user->isEditor()) {
+            $query->where('user_id', $user->id);
+        }
+
+        $narraciones = $query->paginate(10);
         return view('admin.narraciones.index-literario', compact('narraciones'));
     }
 
@@ -104,158 +157,120 @@ class NarracionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'titulo' => 'required|string|max:255',
-            'contenido' => 'required',
+            'titulo'            => 'required|string|max:255',
+            'contenido'         => 'required',
             'fecha_publicacion' => 'required|date',
-            'estado' => 'required|in:borrador,publicado',
-            'orden' => 'nullable|integer|in:0,1000',
-            'permiso_lectura' => 'nullable|in:publico,seguidores,privado',
+            'estado'            => 'required|in:borrador,publicado,promocion',
+            'orden'             => 'nullable|integer|in:0,1000',
+            'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
         ]);
 
-        $narracion = Narracion::create([
-            'titulo' => $request->titulo,
-            'contenido' => $request->contenido,
-            'slug' => Str::slug($request->titulo) . '-' . time(),
+        Narracion::create([
+            'titulo'            => $request->titulo,
+            'contenido'         => $request->contenido,
+            'slug'              => Str::slug($request->titulo) . '-' . time(),
             'fecha_publicacion' => $request->fecha_publicacion,
-            'estado' => $request->estado,
-            'user_id' => auth()->id(),
-            'orden' => $request->orden ?? 0,
-            'permiso_lectura' => $request->permiso_lectura ?? 'publico',
-            'count_feedback' => 0,
-            'count_read' => 0,
+            'estado'            => $request->estado,
+            'user_id'           => auth()->id(),
+            'orden'             => $request->orden ?? 0,
+            'permiso_lectura'   => $request->permiso_lectura ?? 'publico',
+            'count_feedback'    => 0,
+            'count_read'        => 0,
         ]);
 
         return redirect()->route('admin.narraciones.index')
-            ->with('success', 'Narración creada exitosamente.');
+            ->with('success', 'Narración creada correctamente.');
     }
 
     public function edit($slug)
     {
         $narracion = Narracion::where('slug', $slug)->firstOrFail();
+        $this->autorizarEdicion($narracion);
         return view('admin.narraciones.edit-literario', compact('narracion'));
     }
 
     public function update(Request $request, $slug)
     {
-        \Log::info('=== INICIO UPDATE ===');
-        \Log::info('Ruta actual: ' . $request->path());
-        \Log::info('Método HTTP: ' . $request->method());
-        \Log::info('Slug recibido: ' . $slug);
-        \Log::info('Datos del request:', $request->all());
-        
         $narracion = Narracion::where('slug', $slug)->firstOrFail();
-        \Log::info('Narración encontrada:', ['id' => $narracion->id, 'slug' => $narracion->slug, 'titulo' => $narracion->titulo]);
+        $this->autorizarEdicion($narracion);
 
         $request->validate([
-            'titulo' => 'required|string|max:255',
-            'contenido' => 'required',
+            'titulo'            => 'required|string|max:255',
+            'contenido'         => 'required',
             'fecha_publicacion' => 'required|date',
-            'estado' => 'required|in:borrador,publicado',
-            'orden' => 'nullable|integer|in:0,1000',
-            'permiso_lectura' => 'nullable|in:publico,seguidores,privado',
+            'estado'            => 'required|in:borrador,publicado,promocion',
+            'orden'             => 'nullable|integer|in:0,1000',
+            'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
         ]);
 
-        \Log::info('Validación pasada');
-
-        $updateData = [
-            'titulo' => $request->titulo,
-            'contenido' => $request->contenido,
+        $narracion->update([
+            'titulo'            => $request->titulo,
+            'contenido'         => $request->contenido,
             'fecha_publicacion' => $request->fecha_publicacion,
-            'estado' => $request->estado,
-            'orden' => $request->orden ?? $narracion->orden,
-            'permiso_lectura' => $request->permiso_lectura ?? $narracion->permiso_lectura,
-        ];
-        
-        \Log::info('Datos para actualizar:', $updateData);
-        
-        $result = $narracion->update($updateData);
-        \Log::info('Resultado de update: ' . $result);
-        \Log::info('Narración después de update:', ['id' => $narracion->id, 'slug' => $narracion->fresh()->slug, 'titulo' => $narracion->fresh()->titulo]);
-
-        \Log::info('=== FIN UPDATE ===');
+            'estado'            => $request->estado,
+            'orden'             => $request->orden ?? $narracion->orden,
+            'permiso_lectura'   => $request->permiso_lectura ?? $narracion->permiso_lectura,
+        ]);
 
         return redirect()->route('admin.narraciones.index')
-            ->with('success', 'Narración actualizada exitosamente.');
+            ->with('success', 'Narración actualizada correctamente.');
     }
 
-    public function destroy($slug)
+    public function destroy(Request $request, $slug)
     {
-        \Log::info('=== INICIO DESTROY ===');
-        \Log::info('Slug recibido para eliminar: ' . $slug);
-        
         $narracion = Narracion::where('slug', $slug)->firstOrFail();
-        \Log::info('Narración a eliminar:', ['id' => $narracion->id, 'slug' => $narracion->slug, 'titulo' => $narracion->titulo]);
-        
-        // Primera confirmación: verificar que el slug existe
-        if (!$narracion) {
-            \Log::info('Narración no encontrada');
-            return redirect()->route('admin.narraciones.index')
-                ->with('error', 'Narración no encontrada.');
-        }
-        
-        \Log::info('Narración verificada, solicitando confirmación...');
-        
-        // Segunda confirmación: verificar que el usuario realmente quiere eliminar
-        $confirmation = request('confirmar_eliminacion');
+        $this->autorizarEdicion($narracion);
+
+        $confirmation = $request->input('confirmar_eliminacion');
         if ($confirmation !== 'ELIMINAR_' . $narracion->slug) {
-            \Log::info('Confirmación no recibida o incorrecta: ' . $confirmation);
             return redirect()->route('admin.narraciones.index')
-                ->with('error', 'Debe confirmar la eliminación de la narración.');
+                ->with('error', 'Debes confirmar la eliminación escribiendo el código correcto.');
         }
-        
-        \Log::info('Confirmación recibida correctamente: ELIMINAR_' . $narracion->slug);
-        
-        $result = $narracion->delete();
-        \Log::info('Resultado de delete: ' . $result);
-        
-        \Log::info('=== FIN DESTROY ===');
+
+        $narracion->delete();
 
         return redirect()->route('admin.narraciones.index')
-            ->with('success', 'Narración eliminada exitosamente.');
+            ->with('success', 'Narración eliminada correctamente.');
     }
 
-    /**
-     * Autoguardar contenido de la narración
-     */
     public function autosave(Request $request)
     {
-        $narracion = Narracion::findOrFail($request->narracion_id);
+        // Solo puede autosalvar narraciones propias
+        $narracion = Narracion::where('id', $request->narracion_id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
         $narracion->contenido = $request->contenido;
         $narracion->save();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Contenido guardado automáticamente',
-            'timestamp' => now()->format('H:i:s')
+            'success'   => true,
+            'message'   => 'Guardado automáticamente',
+            'timestamp' => now()->format('H:i:s'),
         ]);
     }
 
-    /**
-     * Subir imagen para la narración
-     */
     public function uploadImage(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         try {
-            $file = $request->file('image');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('narraciones/images', $filename, 'public');
-
-            $url = asset('storage/' . $path);
+            $file     = $request->file('image');
+            $filename = time() . '_' . $file->hashName();
+            $path     = $file->storeAs('narraciones/images', $filename, 'public');
 
             return response()->json([
-                'success' => true,
-                'url' => $url,
+                'success'  => true,
+                'url'      => asset('storage/' . $path),
                 'filename' => $filename,
-                'alt' => $file->getClientOriginalName()
+                'alt'      => '',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al subir la imagen: ' . $e->getMessage()
+                'message' => 'Error al subir la imagen.',
             ], 500);
         }
     }

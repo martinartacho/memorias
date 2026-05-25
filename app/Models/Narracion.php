@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Narracion extends Model
 {
@@ -26,9 +27,16 @@ class Narracion extends Model
         'fecha_publicacion' => 'date',
     ];
 
+    /** Solo estado=publicado (admin, featured, etc.) */
     public function scopePublicado($query)
     {
         return $query->where('estado', 'publicado');
+    }
+
+    /** Publicado + Promocion: lo visible al público (con distintos niveles) */
+    public function scopeVisible($query)
+    {
+        return $query->whereIn('estado', ['publicado', 'promocion']);
     }
 
     public function scopeOrderByFecha($query, $direction = 'desc')
@@ -36,9 +44,23 @@ class Narracion extends Model
         return $query->orderBy('fecha_publicacion', $direction);
     }
 
-    public function getExcerptAttribute()
+    public function getExcerptAttribute(): string
     {
-        return str_limit(strip_tags($this->contenido), 200);
+        return Str::limit(strip_tags($this->contenido), 200);
+    }
+
+    /** Número de palabras del contenido (sin HTML, compatible con español) */
+    public function getPalabraCountAttribute(): int
+    {
+        $texto = strip_tags($this->contenido);
+        $partes = preg_split('/\s+/u', trim($texto), -1, PREG_SPLIT_NO_EMPTY);
+        return $partes ? count($partes) : 0;
+    }
+
+    /** Devuelve true si el estado es promocion */
+    public function esPromocion(): bool
+    {
+        return $this->estado === 'promocion';
     }
 
     public function user()

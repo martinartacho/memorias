@@ -1,102 +1,185 @@
 @extends('layouts.literario')
 
-@section('title', 'Dashboard - Memorias sin orden')
+@section('title', 'Dashboard · Memorias sin orden')
 
 @section('content')
 <div class="container">
-  <!-- Welcome Section -->
-  <div class="max-w-4xl mx-auto mb-12">
-    <div class="bg-white rounded-lg shadow-sm border border-stone-200 p-8">
-      <div class="flex items-center justify-between mb-6">
+
+  {{-- ── CABECERA ── --}}
+  <div style="max-width:900px; margin:0 auto 2rem;">
+    <div style="background:#fff; border:1px solid var(--parchment-dark); padding:2rem 2.5rem; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+      <div>
+        <div class="section-label">Mi cuenta</div>
+        <h1 style="font-family:var(--serif); font-size:2rem; font-weight:700; color:var(--ink); margin-bottom:0.3rem;">
+          Hola, {{ $user->name }}
+        </h1>
+        <p style="font-family:var(--sans); font-size:0.75rem; letter-spacing:0.1em; color:var(--ink-muted);">{{ $user->email }}</p>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+        @php $rolColor = match($user->role) { 'admin' => 'var(--accent)', 'editor' => 'var(--gold)', default => 'var(--ink-muted)' }; @endphp
+        <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.25em; text-transform:uppercase; color:{{ $rolColor }}; border:1px solid {{ $rolColor }}; padding:0.2rem 0.65rem;">
+          <i class="bi bi-person-circle"></i> {{ $user->role ?? 'lector' }}
+        </span>
+        <a href="{{ route('profile.edit') }}" class="read-more" style="font-size:0.62rem;">Editar perfil →</a>
+      </div>
+    </div>
+  </div>
+
+  {{-- ── 4 CONTADORES (todos los roles) ── --}}
+  <div style="max-width:900px; margin:0 auto 2rem; display:grid; grid-template-columns:repeat(4,1fr); gap:1.25rem;">
+
+    @php
+      $contadores = [
+        ['valor' => $stats['total'],     'label' => 'Total',     'icono' => 'bi-journals',       'color' => 'var(--ink)'],
+        ['valor' => $stats['publicadas'],'label' => 'Publicadas','icono' => 'bi-check-circle',   'color' => '#16a34a',   'borde' => '#16a34a'],
+        ['valor' => $stats['promocion'], 'label' => 'Promoción', 'icono' => 'bi-eye',            'color' => 'var(--gold)','borde' => 'var(--gold)'],
+        ['valor' => $stats['borradores'],'label' => 'Borradores','icono' => 'bi-pencil-square',  'color' => 'var(--ink-muted)'],
+      ];
+    @endphp
+
+    @foreach($contadores as $c)
+      <div style="background:#fff; border:1px solid var(--parchment-dark); {{ isset($c['borde']) ? 'border-top:3px solid '.$c['borde'].';' : '' }} padding:1.75rem 1.5rem; text-align:center;">
+        <i class="bi {{ $c['icono'] }}" style="font-size:1.75rem; color:{{ $c['color'] }};"></i>
+        <div style="font-family:var(--serif); font-size:2.25rem; font-weight:700; color:var(--ink); margin:0.5rem 0;">
+          {{ $c['valor'] }}
+        </div>
+        <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted);">
+          {{ $c['label'] }}
+        </div>
+      </div>
+    @endforeach
+  </div>
+
+  {{-- ══════════════════════════════════════════════════════════════════════ --}}
+  @if($user->isAdmin())
+  {{-- ── ADMIN ── --}}
+
+    <div style="max-width:900px; margin:0 auto 2rem;">
+      <div style="background:#fff; border:1px solid var(--parchment-dark); padding:2rem 2.5rem;">
+        <div class="section-label">Acciones rápidas</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:1rem; margin-top:1rem;">
+
+          @php $acciones = [
+            ['href' => route('admin.narraciones.create'), 'icono' => 'bi-plus-circle',  'color' => 'var(--accent)', 'label' => 'Nueva narración'],
+            ['href' => route('admin.users.index'),        'icono' => 'bi-people',       'color' => 'var(--gold)',   'label' => 'Usuarios'],
+            ['href' => route('narraciones.index'),        'icono' => 'bi-book',         'color' => 'var(--ink-muted)', 'label' => 'Ver catálogo'],
+            ['href' => route('profile.edit'),             'icono' => 'bi-person',       'color' => 'var(--ink-muted)', 'label' => 'Mi perfil'],
+          ]; @endphp
+
+          @foreach($acciones as $a)
+            <a href="{{ $a['href'] }}"
+               style="display:flex; flex-direction:column; align-items:center; padding:1.75rem 1rem; border:1px solid var(--parchment-dark); text-decoration:none; text-align:center; transition:box-shadow 0.2s;"
+               onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+              <i class="bi {{ $a['icono'] }}" style="font-size:2rem; color:{{ $a['color'] }}; margin-bottom:0.75rem;"></i>
+              <span style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink);">{{ $a['label'] }}</span>
+            </a>
+          @endforeach
+
+        </div>
+      </div>
+    </div>
+
+  {{-- ══════════════════════════════════════════════════════════════════════ --}}
+  @elseif($user->isEditor())
+  {{-- ── EDITOR ── --}}
+
+    <div style="max-width:900px; margin:0 auto 2rem;">
+      <div style="background:#fff; border:1px solid var(--parchment-dark); padding:2rem 2.5rem;">
+        <div class="section-label">Acciones rápidas</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:1rem; margin-top:1rem;">
+
+          @php $acciones = [
+            ['href' => route('admin.narraciones.create'), 'icono' => 'bi-plus-circle', 'color' => 'var(--accent)',    'label' => 'Nueva narración'],
+            ['href' => route('admin.narraciones.index'),  'icono' => 'bi-list-ul',     'color' => 'var(--ink-muted)', 'label' => 'Mis narraciones'],
+            ['href' => route('narraciones.index'),        'icono' => 'bi-book',        'color' => 'var(--ink-muted)', 'label' => 'Ver catálogo'],
+            ['href' => route('profile.edit'),             'icono' => 'bi-person',      'color' => 'var(--ink-muted)', 'label' => 'Mi perfil'],
+          ]; @endphp
+
+          @foreach($acciones as $a)
+            <a href="{{ $a['href'] }}"
+               style="display:flex; flex-direction:column; align-items:center; padding:1.75rem 1rem; border:1px solid var(--parchment-dark); text-decoration:none; text-align:center; transition:box-shadow 0.2s;"
+               onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+              <i class="bi {{ $a['icono'] }}" style="font-size:2rem; color:{{ $a['color'] }}; margin-bottom:0.75rem;"></i>
+              <span style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink);">{{ $a['label'] }}</span>
+            </a>
+          @endforeach
+
+        </div>
+      </div>
+    </div>
+
+  {{-- ══════════════════════════════════════════════════════════════════════ --}}
+  @else
+  {{-- ── LECTOR ── --}}
+
+    {{-- Banner suscripción --}}
+    <div style="max-width:900px; margin:0 auto 2rem;">
+      <div style="background:#fff; border:1px solid var(--parchment-dark); border-left:3px solid {{ $esSubscriptor ? 'var(--accent)' : 'var(--gold)' }}; padding:1.5rem 2rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
         <div>
-          <h1 class="text-3xl font-serif font-bold text-stone-900 mb-2">
-            Hola, {{ Auth::user()->name }}
-          </h1>
-          <p class="text-stone-600">{{ Auth::user()->email }}</p>
+          <div style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.3em; text-transform:uppercase; color:{{ $esSubscriptor ? 'var(--accent)' : 'var(--gold)' }}; margin-bottom:0.4rem;">
+            <i class="bi bi-envelope-heart{{ $esSubscriptor ? '-fill' : '' }}"></i>
+            Suscripción por email
+          </div>
+          <p style="font-family:var(--body); color:var(--ink-soft); font-size:0.95rem;">
+            @if($esSubscriptor)
+              Tienes acceso a todo el contenido exclusivo para suscriptores.
+            @else
+              Suscríbete gratis para acceder a las narraciones exclusivas.
+            @endif
+          </p>
         </div>
-        <div class="text-right"> 
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-stone-100 text-stone-800">
-            <i class="bi bi-person-circle mr-2"></i>
-            {{ Auth::user()->role ?? 'Lector' }}
+        @if(!$esSubscriptor)
+          <a href="{{ route('suscripcion.form') }}"
+             style="white-space:nowrap; background:var(--accent); color:var(--parchment); font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; padding:0.65rem 1.4rem; text-decoration:none;"
+             onmouseover="this.style.background='var(--ink)'" onmouseout="this.style.background='var(--accent)'">
+            Suscribirme gratis →
+          </a>
+        @else
+          <span style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent);">
+            <i class="bi bi-check-circle-fill"></i> Activa
           </span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-3 gap-6">
-        <!-- Stats -->
-        <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
-          <i class="bi bi-book text-4xl text-stone-600 mb-4"></i>
-          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">0</div>
-          <div class="text-sm text-stone-600 font-sans tracking-wide">NARRACIONES</div>
-        </div>
-        <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
-          <i class="bi bi-calendar text-4xl text-stone-600 mb-4"></i>
-          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">{{ Auth::user()->created_at->format('M Y') }}</div>
-          <div class="text-sm text-stone-600 font-sans tracking-wide">MIEMBRO DESDE</div>
-        </div>
-        <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-shadow">
-          <i class="bi bi-clock text-4xl text-stone-600 mb-4"></i>
-          <div class="text-3xl font-serif font-bold text-stone-900 mb-2">Reciente</div>
-          <div class="text-sm text-stone-600 font-sans tracking-wide">ÚLTIMA VISITA</div>
-        </div>
+        @endif
       </div>
     </div>
-  </div>
 
-  <!-- Quick Actions -->
-  @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
-  <div class="max-w-4xl mx-auto mb-12">
-    <div class="bg-white rounded-lg shadow-sm border border-stone-200 p-8">
-      <h2 class="text-2xl font-serif font-bold text-stone-900 mb-6">
-        Acciones Rápidas
-      </h2>
-      
-      <div class="grid grid-cols-4 gap-6">
-        @if(Auth::user()->role === 'admin')
-        <a href="{{ route('admin.narraciones.index') }}" 
-           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
-          <i class="bi bi-gear text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
-          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">ADMINISTRAR</span>
-        </a>
+    {{-- Solicitar rol de editor --}}
+    <div style="max-width:900px; margin:0 auto 2rem;">
+      <div style="background:#fff; border:1px solid var(--parchment-dark); padding:2rem 2.5rem;">
+        <div class="section-label">¿Quieres publicar?</div>
+        <h2 style="font-family:var(--serif); font-size:1.4rem; font-weight:700; color:var(--ink); margin-bottom:0.75rem;">
+          Solicitar rol de editor
+        </h2>
+        <p style="font-size:0.95rem; line-height:1.75; color:var(--ink-soft); margin-bottom:1.5rem;">
+          Los editores pueden crear y gestionar sus propias narraciones. Envía una solicitud al administrador.
+        </p>
+
+        @if(session('editor_solicitado') || session('success'))
+          <div style="background:#f0fdf4; border:1px solid #86efac; padding:0.9rem 1.25rem; font-family:var(--sans); font-size:0.8rem; color:#166534;">
+            <i class="bi bi-check-circle-fill"></i> {{ session('success', 'Solicitud ya enviada. El administrador te contactará por email.') }}
+          </div>
+        @else
+          <form action="{{ route('dashboard.solicitar-editor') }}" method="POST">
+            @csrf
+            <div style="margin-bottom:1rem;">
+              <label style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted); display:block; margin-bottom:0.5rem;">
+                Motivo (opcional)
+              </label>
+              <textarea name="motivo" rows="3" placeholder="Me gustaría compartir mis narraciones…"
+                style="width:100%; border:1px solid var(--parchment-dark); background:var(--parchment); padding:0.75rem 1rem; font-family:var(--body); font-size:0.9rem; color:var(--ink); resize:vertical; outline:none;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--parchment-dark)'"></textarea>
+            </div>
+            <button type="submit"
+              style="background:var(--ink); color:var(--parchment); border:none; padding:0.75rem 1.75rem; font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; transition:background 0.2s;"
+              onmouseover="this.style.background='var(--accent)'" onmouseout="this.style.background='var(--ink)'">
+              Enviar solicitud →
+            </button>
+          </form>
         @endif
-        
-        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
-        <a href="{{ route('admin.narraciones.create') }}" 
-           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
-          <i class="bi bi-plus-circle text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
-          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">NUEVA NARRACIÓN</span>
-        </a>
-        @endif
-        
-        <a href="{{ route('narraciones.index') }}" 
-           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
-          <i class="bi bi-book text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
-          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">LEER NARRACIONES</span>
-        </a>
-        
-        <a href="{{ route('profile.edit') }}" 
-           class="flex flex-col items-center p-8 bg-stone-50 rounded-lg border border-stone-200 hover:shadow-md transition-all text-center group">
-          <i class="bi bi-person text-4xl text-stone-600 mb-4 group-hover:text-stone-800 transition-colors"></i>
-          <span class="text-sm font-sans font-medium text-stone-900 tracking-wide uppercase">MI PERFIL</span>
-        </a>
+
       </div>
     </div>
-  </div>
+
   @endif
 
-  <!-- Recent Activity -->
-  <div class="max-w-4xl mx-auto">
-    <div class="bg-white rounded-lg shadow-sm border border-stone-200 p-8">
-      <h2 class="text-2xl font-serif font-bold text-stone-900 mb-6">
-        Actividad Reciente
-      </h2>
-      
-      <div class="text-center py-12">
-        <i class="bi bi-clock-history text-5xl text-stone-300 mb-4"></i>
-        <p class="text-stone-600 font-sans">No hay actividad reciente</p>
-        <p class="text-sm text-stone-500 font-sans mt-2">Tu actividad aparecerá aquí</p>
-      </div>
-    </div>
-  </div>
 </div>
 @endsection

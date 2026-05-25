@@ -422,6 +422,62 @@
         text-transform: uppercase;
       }
 
+      /* ── CARD PROMOCION ── */
+      .story-card--promo {
+        border-left: 3px solid var(--gold);
+        background: linear-gradient(to bottom, #fffdf5, #fff);
+      }
+      .story-card--promo .card-num { color: var(--gold); opacity: 0.5; }
+      .story-card--promo .card-excerpt {
+        opacity: 0.7;
+        mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+      }
+
+      /* ── PAGINACIÓN ── */
+      .pagination-literario {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        border-top: 1px solid var(--parchment-dark);
+        padding-top: 2rem;
+        margin-top: 1rem;
+      }
+      .page-numbers {
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+      .page-link {
+        font-family: var(--sans);
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        text-decoration: none;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid transparent;
+        transition: color 0.2s, border-color 0.2s;
+      }
+      a.page-link:hover {
+        color: var(--accent);
+        border-color: var(--parchment-dark);
+      }
+      .page-link--active {
+        color: var(--parchment);
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .page-link--disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      .page-link--dots {
+        letter-spacing: 0;
+        color: var(--parchment-dark);
+      }
+
       @media (max-width: 640px) {
         .featured { grid-template-columns: 1fr; }
         .featured-divider { display: none; }
@@ -446,44 +502,76 @@
   </div>
 </header>
 
+@php
+  // Estado de suscripción: se comprueba la cookie en cada petición
+  $_token_nav   = request()->cookie('subscriber_token');
+  $_suscrito_nav = \App\Models\Subscriber::tokenIsValid($_token_nav);
+@endphp
+
 <nav>
   <ul>
+    {{-- ── Siempre visibles ── --}}
     <li><a href="{{ route('home') }}" class="{{ request()->is('/') ? 'active' : '' }}">
       <i class="bi bi-house"></i> Inicio
     </a></li>
     <li><a href="{{ route('narraciones.index') }}" class="{{ request()->is('narraciones*') ? 'active' : '' }}">
       <i class="bi bi-book"></i> Narraciones
     </a></li>
-    
+
     @auth
+      {{-- ── Usuario autenticado ── --}}
+
+      {{-- Dashboard: siempre visible para usuarios logados --}}
       <li><a href="{{ route('dashboard') }}" class="{{ request()->is('dashboard') ? 'active' : '' }}">
         <i class="bi bi-speedometer2"></i> Dashboard
       </a></li>
-      
-      @if(Auth::user()->role === 'admin' || Auth::user()->role === 'editor')
-      <li><a href="{{ route('admin.narraciones.index') }}" class="{{ request()->is('admin*') ? 'active' : '' }}">
-        <i class="bi bi-gear"></i> Administrar
-      </a></li>
-      @endif
-      
-      <li><a href="{{ route('profile.edit') }}">
+
+
+
+
+      <li><a href="{{ route('profile.edit') }}" class="{{ request()->is('profile*') ? 'active' : '' }}">
         <i class="bi bi-person-circle"></i> {{ Auth::user()->name }}
       </a></li>
-      
+
       <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
         <i class="bi bi-box-arrow-right"></i> Cerrar
       </a></li>
-      <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+      <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
         @csrf
       </form>
+
     @else
+      {{-- ── Visitante no autenticado ── --}}
       <li><a href="{{ route('login') }}">
         <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
       </a></li>
-      <li><a href="{{ route('register') }}">
-        <i class="bi bi-person-plus"></i> Registrarse
-      </a></li>
-    @endauth
+      {{-- Registrarse desactivado: el acceso es por suscripción de email --}}
+      {{-- <li><a href="{{ route('register') }}"><i class="bi bi-person-plus"></i> Registrarse</a></li> --}}
+    @endguest
+
+    {{-- ── Suscripción: visible para todos salvo admin/editor ── --}}
+    @if(!auth()->check() || !auth()->user()->canAccessAdmin())
+      @if($_suscrito_nav)
+        {{-- Ya suscrito: icono de check + enlace para cancelar --}}
+        <li style="display:flex; align-items:center;">
+          <a href="{{ route('suscripcion.baja', $_token_nav) }}"
+             title="Cancelar suscripción"
+             style="display:flex; align-items:center; gap:0.35rem; opacity:0.7;"
+             onmouseover="this.style.opacity='1'"
+             onmouseout="this.style.opacity='0.7'">
+            <i class="bi bi-envelope-check-fill"></i>
+            <span>Suscrito</span>
+            <i class="bi bi-x-circle" style="font-size:0.7em; opacity:0.6;"></i>
+          </a>
+        </li>
+      @else
+        {{-- No suscrito: enlace principal --}}
+        <li><a href="{{ route('suscripcion.form') }}" class="{{ request()->is('suscribirse*') ? 'active' : '' }}">
+          <i class="bi bi-envelope-heart"></i> Suscribirme
+        </a></li>
+      @endif
+    @endif
+
   </ul>
 </nav>
 

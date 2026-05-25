@@ -1,364 +1,265 @@
 # 📚 Memorias sin orden
 
-> *Una colección literaria digital para publicar narraciones y relatos*
+> *Una colección literaria digital para publicar y compartir narraciones personales*
 
 <p align="center">
   <img src="https://img.shields.io/badge/Laravel-12.0-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
   <img src="https://img.shields.io/badge/PHP-8.2-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP">
-  <img src="https://img.shields.io/badge/Tailwind%20CSS-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
   <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
 </p>
 
-## 🎭 **Características Principales**
-
-### 📖 **Gestión de Narraciones**
-- ✅ **CRUD completo** para crear, leer, actualizar y eliminar narraciones
-- ✅ **Sistema de publicación** con estado (borrador/publicado)
-- ✅ **URLs amigables** con slugs automáticos
-- ✅ **Orden cronológico** por fecha de publicación
-- ✅ **Paginación elegante** para listados
-
-### 🎨 **Diseño Literario**
-- ✅ **Estética vintage** con tonos pergamino y tinta
-- ✅ **Tipografía elegante** (Playfair Display, Lora, Josefin Sans)
-- ✅ **Letra capital** en la primera línea de cada narración
-- ✅ **Diseño responsive** para todos los dispositivos
-- ✅ **Grid de tarjetas** para presentación visual
-
-### 🔐 **Sistema de Autenticación**
-- ✅ **Laravel Breeze** para autenticación robusta
-- ✅ **Login/Register/Logout** con diseño literario
-- ✅ **Recuperación de contraseña** por email
-- ✅ **Panel de administración** protegido
-- ✅ **Sesiones seguras** con middleware
-
-### 🛠 **Tecnologías Modernas**
-- ✅ **Laravel 12** con PHP 8.2
-- ✅ **Tailwind CSS** para estilos
-- ✅ **Vite** para gestión de assets
-- ✅ **MySQL** para base de datos
-- ✅ **Blade** para plantillas
+**Demo:** [h.artacho.org](https://h.artacho.org) · **Repo:** [github.com/martinartacho/memorias](https://github.com/martinartacho/memorias)
 
 ---
 
-## 🚀 **Instalación Local**
+## ✨ Características
 
-### 📋 **Requisitos Previos**
-- PHP 8.2 o superior
-- Composer
-- Node.js y npm
-- MySQL 8.0 o superior
-- Git
+### 📖 Narraciones
 
-### ⚙️ **Pasos de Instalación**
+- **CRUD completo** con slugs automáticos y fechas de publicación
+- **Tres estados** de publicación:
+  - `borrador` — solo visible en el panel de administración
+  - `publicado` — visible con texto completo
+  - `promocion` — visible con los primeros 100 caracteres (teaser para suscriptores)
+- **Tres niveles de acceso** por narración:
+  - `publico` — accesible para cualquier visitante
+  - `seguidores` — solo para suscriptores verificados por email
+  - `privado` — invisible al público, solo accesible desde el panel admin
+- **Publicación programada** — narraciones con fecha futura no aparecen en el catálogo público
+- **Contador de palabras** en cada tarjeta y en la vista de detalle
+- **Narración destacada** (campo `orden`) fija en la portada, independiente de la paginación
+- **Contador de lecturas** por narración
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone https://github.com/martinartacho/memorias.git
-   cd memorias
-   ```
+### 📧 Suscripción por email
 
-2. **Instalar dependencias PHP**
-   ```bash
-   composer install
-   ```
+Acceso a contenido exclusivo sin necesidad de crear una cuenta:
 
-3. **Instalar dependencias Node**
-   ```bash
-   npm install
-   ```
+1. El visitante hace clic en una narración de suscriptores o en "Suscribirme"
+2. Introduce su email → recibe un **magic link** (sin contraseña)
+3. Clic en el enlace → cookie de acceso (1 año) → lectura inmediata
+4. Baja en un clic desde el mismo email
 
-4. **Configurar entorno**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
+### 👥 Roles de usuario
 
-5. Configurar base de datos
-   ```bash
-   # Editar .env con tus credenciales de MySQL
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=memorias
-   DB_USERNAME=tu_usuario
-   DB_PASSWORD=tu_contraseña_segura
-   ```
+| Rol | Catálogo | Panel admin | Narraciones |
+|-----|----------|-------------|-------------|
+| `lector` | Público + suscriptor si cookie | No | Solo lectura |
+| `editor` | Público + suscriptor si cookie | Sí | Solo las propias |
+| `admin` | Todo (incluido privado/futuras) | Sí | Todas |
 
-6. Ejecutar migraciones y seeders
-   ```bash
-   php artisan migrate
-   php artisan db:seed
-   ```
+- Los **lectores** pueden solicitar el rol de editor desde su dashboard
+- Los **admins** cambian roles desde `/admin/users` sin recargar
 
-7. **Compilar assets**
-   ```bash
-   npm run build
-   ```
+### 🎨 Diseño literario
 
-8. **Iniciar servidor**
-   ```bash
-   php artisan serve
-   ```
-
-### 🔑 **Credenciales de Administración**
-- **Email**: Configurar en `SEEDER_ADMIN_EMAIL` en `.env`
-- **Contraseña**: Configurar en `SEEDER_ADMIN_PASSWORD` en `.env`
+- Estética vintage con paleta pergamino/tinta/acento rojo
+- Tipografía: **Playfair Display** (títulos) · **Lora** (cuerpo) · **Josefin Sans** (labels)
+- Layout de dos columnas en la vista de detalle (metadatos | contenido)
+- Paginación personalizada en español integrada en el diseño
+- Responsive para móvil y escritorio
 
 ---
 
-## 🌐 **Despliegue en hartacho.com**
-
-### 🎯 **Opción 1: Hosting Compartido (cPanel)**
-
-1. **Subir archivos**
-   ```bash
-   # Excluir carpetas innecesarias
-   # - node_modules
-   # - .git
-   # - storage/framework/cache/*
-   # - storage/framework/sessions/*
-   # - storage/framework/views/*
-   ```
-
-2. **Configurar entorno**
-   - Crear archivo `.env` en el servidor
-   - Configurar variables de producción:
-   ```env
-   APP_ENV=production
-   APP_DEBUG=false
-   APP_URL=https://hartacho.com
-   
-   DB_CONNECTION=mysql
-   DB_HOST=localhost
-   DB_DATABASE=nombre_db_hartacho
-   DB_USERNAME=usuario_db
-   DB_PASSWORD=tu_contraseña_segura
-   
-   MAIL_MAILER=smtp
-   MAIL_HOST=smtp.hartacho.com
-   MAIL_PORT=587
-   ```
-
-3. **Instalar dependencias**
-   ```bash
-   composer install --no-dev --optimize-autoloader
-   npm install --production
-   npm run build
-   ```
-
-4. **Permisos de carpetas**
-   ```bash
-   chmod 755 storage
-   chmod 755 storage/framework
-   chmod 755 storage/framework/cache
-   chmod 755 storage/framework/sessions
-   chmod 755 storage/framework/views
-   chmod 755 bootstrap/cache
-   ```
-
-5. **Ejecutar migraciones**
-   ```bash
-   php artisan migrate --force
-   php artisan db:seed --force
-   ```
-
-6. **Optimizar producción**
-   ```bash
-   php artisan config:cache
-   php artisan route:cache
-   php artisan view:cache
-   ```
-
-### 🚀 **Opción 2: VPS/Dedicado (Ubuntu/Debian)**
-
-1. **Instalar servidor web**
-   ```bash
-   sudo apt update
-   sudo apt install nginx mysql-server php8.2-fpm php8.2-mysql
-   ```
-
-2. **Configurar Nginx**
-   ```nginx
-   server {
-       listen 80;
-       server_name hartacho.com www.hartacho.com;
-       root /var/www/hartacho/public;
-       index index.php;
-       
-       location / {
-           try_files $uri $uri/ /index.php?$query_string;
-       }
-       
-       location ~ \.php$ {
-           fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-           fastcgi_index index.php;
-           include fastcgi_params;
-           fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-       }
-   }
-   ```
-
-3. **Configurar SSL con Let's Encrypt**
-   ```bash
-   sudo apt install certbot python3-certbot-nginx
-   sudo certbot --nginx -d hartacho.com -d www.hartacho.com
-   ```
-
-4. **Desplegar aplicación**
-   ```bash
-   git clone https://github.com/martinartacho/memorias.git /var/www/hartacho
-   cd /var/www/hartacho
-   
-   composer install --no-dev --optimize-autoloader
-   npm install --production
-   npm run build
-   
-   cp .env.example .env
-   php artisan key:generate
-   # Configurar .env para producción
-   
-   php artisan migrate --force
-   php artisan db:seed --force
-   php artisan optimize
-   ```
-
-### ☁️ **Opción 3: Plataforma Cloud (DigitalOcean/Laravel Forge)**
-
-1. **Crear servidor** con Laravel Forge
-2. **Conectar repositorio** GitHub
-3. **Configurar variables de entorno**
-4. **Activar SSL automático**
-5. **Configurar cola de trabajos** (opcional)
-
----
-
-## 📁 **Estructura del Proyecto**
+## 🏗 Estructura del proyecto
 
 ```
 hartacho/
 ├── app/
-│   ├── Http/Controllers/
-│   │   ├── Auth/              # Controladores de autenticación
-│   │   ├── NarracionController.php
-│   │   └── ProfileController.php
-│   ├── Models/
-│   │   ├── Narracion.php
-│   │   └── User.php
-│   └── View/Components/       # Componentes Blade
-├── database/
-│   ├── migrations/           # Migraciones de base de datos
-│   └── seeders/              # Datos iniciales
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Auth/                    # Login, registro, contraseña
+│   │   │   ├── NarracionController.php  # Catálogo público + panel admin
+│   │   │   ├── SubscriberController.php # Flujo de suscripción por email
+│   │   │   ├── UserController.php       # Gestión de usuarios (admin)
+│   │   │   └── ProfileController.php
+│   │   └── Middleware/
+│   │       └── EnsureUserIsAdmin.php    # Protege rutas /admin/*
+│   ├── Mail/
+│   │   └── SubscriberMagicLink.php      # Email con enlace de acceso
+│   └── Models/
+│       ├── Narracion.php   # estados: borrador/publicado/promocion
+│       ├── Subscriber.php  # Suscriptores por email (magic link)
+│       ├── User.php        # Roles: lector/editor/admin
+│       └── Follow.php
+├── database/migrations/
+│   ├── create_narracions_table          # Tabla principal con permisos y estado
+│   ├── create_follows_table
+│   ├── add_role_to_users_table
+│   ├── create_subscribers_table         # email + token + verified_at
+│   └── add_promocion_to_narracions_estado
 ├── resources/views/
-│   ├── layouts/
-│   │   ├── literario.blade.php    # Layout principal
-│   │   └── guest.blade.php        # Layout de autenticación
-│   ├── auth/                 # Vistas de autenticación
-│   ├── narraciones/          # Vistas públicas
-│   └── admin/narraciones/    # Vistas de administración
-├── routes/
-│   ├── web.php              # Rutas web
-│   └── auth.php             # Rutas de autenticación
-└── public/                  # Assets públicos
+│   ├── layouts/literario.blade.php      # Layout principal con CSS inline
+│   ├── narraciones/
+│   │   ├── index-literario.blade.php    # Catálogo con destacado + grid + teaser
+│   │   └── show-literario.blade.php     # Detalle dos columnas + modo promocion
+│   ├── suscripcion/
+│   │   ├── form.blade.php               # Formulario de email
+│   │   ├── enviada.blade.php            # Confirmación de envío
+│   │   └── baja.blade.php              # Confirmación de baja
+│   ├── admin/
+│   │   ├── narraciones/                 # CRUD admin con editor WYSIWYG
+│   │   └── users/index.blade.php        # Gestión de usuarios con cambio de rol
+│   ├── emails/
+│   │   └── subscriber-magic-link.blade.php
+│   └── pagination/literario.blade.php   # Paginación con diseño literario
+├── lang/es/pagination.php               # Traducciones de paginación
+└── routes/web.php
 ```
 
 ---
 
-## 🎨 **Personalización**
+## 🚀 Instalación local
 
-### 📝 **Editar Contenido**
-- **Títulos**: Editar `resources/views/layouts/literario.blade.php`
-- **Colores**: Modificar `resources/css/app.css`
-- **Tipografías**: Configurar en `tailwind.config.js`
+### Requisitos
 
-### 🖼️ **Cambiar Logo**
-- Reemplazar `public/favicon.ico`
-- Actualizar logo en `resources/views/components/application-logo.blade.php`
+- PHP 8.2+
+- Composer
+- Node.js y npm
+- MySQL 8.0+
 
-### 📧 **Configurar Email**
-```env
-MAIL_MAILER=smtp
-MAIL_HOST=tu-servidor-smtp
-MAIL_PORT=587
-MAIL_USERNAME=tu-email@hartacho.com
-MAIL_PASSWORD=tu_contraseña_email
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=noreply@hartacho.com
-MAIL_FROM_NAME="Memorias sin orden"
-```
+### Pasos
 
----
-
-## 🔧 **Mantenimiento**
-
-### 📊 **Comandos Útiles**
 ```bash
-# Limpiar cache
-php artisan optimize:clear
+# 1. Clonar
+git clone https://github.com/martinartacho/memorias.git
+cd memorias
 
-# Cache para producción
+# 2. Dependencias
+composer install
+npm install
+
+# 3. Entorno
+cp .env.example .env
+php artisan key:generate
+
+# 4. Configurar .env (ver sección siguiente)
+
+# 5. Base de datos
+php artisan migrate
+php artisan db:seed --class=AdminUserSeeder
+
+# 6. Assets
+npm run build
+
+# 7. Enlace de storage (imágenes subidas)
+php artisan storage:link
+
+# 8. Servidor
+php artisan serve
+```
+
+### Variables de entorno clave
+
+```env
+APP_URL=http://hartacho.test
+APP_DEBUG=true
+
+DB_DATABASE=hartacho
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Email — en local usar 'log' (los emails van a storage/logs/laravel.log)
+MAIL_MAILER=log
+# En producción:
+# MAIL_MAILER=smtp
+# MAIL_HOST=smtp.tu-proveedor.com
+# MAIL_PORT=587
+# MAIL_USERNAME=noreply@artacho.org
+# MAIL_PASSWORD=tu_contraseña
+# MAIL_FROM_ADDRESS=noreply@artacho.org
+# MAIL_FROM_NAME="Memorias sin orden"
+
+# Contraseña del usuario admin inicial (usado por AdminUserSeeder)
+SEEDER_ADMIN_PASSWORD=contraseña_segura
+```
+
+### Credenciales por defecto (seeder)
+
+| Campo | Valor |
+|-------|-------|
+| Email | `hola@artacho.org` |
+| Contraseña | valor de `SEEDER_ADMIN_PASSWORD` en `.env` |
+| Rol | `admin` |
+
+---
+
+## 🌐 Despliegue en producción
+
+### Variables de entorno (producción)
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://h.artacho.org
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.tu-proveedor.com
+MAIL_PORT=587
+MAIL_USERNAME=noreply@artacho.org
+MAIL_PASSWORD=tu_contraseña
+MAIL_FROM_ADDRESS=noreply@artacho.org
+MAIL_FROM_NAME="Memorias sin orden"
+
+SESSION_ENCRYPT=true
+```
+
+### Comandos de despliegue
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm run build
+
+php artisan migrate --force
+php artisan storage:link
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-
-# Backup de base de datos
-php artisan db:backup --database=mysql --destination=backup.sql
-
-# Crear nueva narración (seeder)
-php artisan make:seeder NuevaNarracionSeeder
 ```
 
-### 🐛 **Solución de Problemas**
+### Permisos de carpetas (servidor Linux)
 
-**Error 500 - Internal Server Error**
 ```bash
-# Verificar permisos
-chmod -R 755 storage
-chmod -R 755 bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+```
 
-# Limpiar cache
+---
+
+## 🔧 Mantenimiento
+
+```bash
+# Limpiar todas las cachés
 php artisan optimize:clear
-```
 
-**CSS no carga**
-```bash
-# Recompilar assets
-npm run build
-npm run dev  # Para desarrollo
-```
+# Ver emails enviados en local (abre el log)
+tail -f storage/logs/laravel.log | grep -A 10 "Message-ID"
 
-**Base de datos no conecta**
-```bash
-# Verificar configuración .env
-php artisan config:clear
+# Migraciones pendientes
 php artisan migrate:status
+
+# Recompilar assets tras cambios CSS/JS
+npm run build
 ```
 
 ---
 
-## 📄 **Licencia**
+## 🔐 Seguridad
 
-Este proyecto está bajo la Licencia MIT. Ver archivo [LICENSE](LICENSE) para más detalles.
-
----
-
-## 🤝 **Contribuir**
-
-1. Fork del proyecto
-2. Crear rama de características (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit de cambios (`git commit -m 'Agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abrir Pull Request
+- Rutas `/admin/*` protegidas por middleware `EnsureUserIsAdmin`
+- Los **editores** solo pueden editar/borrar sus propias narraciones (`user_id`)
+- El **autosave** verifica que la narración pertenece al usuario autenticado
+- Suscriptores autenticados mediante cookie `HttpOnly` con token único de 64 caracteres
+- Narraciones `privado` devuelven 404 al público, nunca aparecen en listados
+- Imágenes subidas con nombre `hashName()` (sin nombre original del cliente)
 
 ---
 
-## 📞 **Soporte**
+## 📄 Licencia
 
-- **Web**: https://hartacho.com
-- **GitHub**: https://github.com/martinartacho/memorias
+MIT — ver [LICENSE](LICENSE)
 
 ---
 
-<p align="center">
-  <em>"Palabras que perduran en el tiempo digital"</em>
-</p>
+<p align="center"><em>"Palabras que perduran"</em></p>

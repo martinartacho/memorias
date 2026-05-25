@@ -1,78 +1,130 @@
 @extends('layouts.literario')
 
-@section('title', 'Narraciones - Memorias sin orden')
+@section('title', 'Narraciones · Memorias sin orden')
 
 @section('content')
 <main class="container">
 
-  <!-- FEATURED -->
-  @if($narraciones->count() > 0)
-    @php
-        $featured = $narraciones->first();
-        $total_count = $narraciones->total();
-    @endphp
-{{--     <div class="featured">
+  {{-- ── DESTACADO (solo en página 1) ── --}}
+  @if($featured && $narraciones->currentPage() === 1)
+    <div class="featured">
       <div class="featured-meta">
         <div class="section-label">Destacado</div>
-        <div class="featured-number">{{ str_pad($narraciones->firstItem(), 2, '0', STR_PAD_LEFT) }}</div>
+        <div class="featured-number">{{ str_pad($featured->id, 2, '0', STR_PAD_LEFT) }}</div>
         <div class="featured-category">Narración · {{ $featured->fecha_publicacion->format('Y') }}</div>
       </div>
       <div class="featured-divider"></div>
       <div class="featured-text">
         <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->format('F Y') }}</div>
-        <h2>{!! Str::limit($featured->titulo, 50) !!}</h2>
-        <p class="dropcap">{!! Str::limit($featured->contenido, 300) !!}</p>
+        <h2>{{ Str::limit(strip_tags($featured->titulo), 60) }}</h2>
+        <p class="dropcap">{{ Str::limit(strip_tags($featured->contenido), 280) }}</p>
         <a href="{{ route('narraciones.show', $featured->slug) }}" class="read-more">Leer narración →</a>
       </div>
-    </div> --}}
+    </div>
+  @endif
 
-    <!-- GRID -->
+  {{-- ── GRID ── --}}
+  @if($narraciones->count() > 0)
+
     <div class="grid-label">
-      Todas las narraciones <span>{{ $total_count }} textos</span>
+      Todas las narraciones
+      <span>{{ $narraciones->total() }} texto{{ $narraciones->total() !== 1 ? 's' : '' }}</span>
     </div>
 
     <div class="stories-grid">
       @foreach($narraciones as $key => $narracion)
-        <div class="story-card" onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'">
+
+        @php $esPromo = $narracion->estado === 'promocion'; @endphp
+
+        <div class="story-card {{ $esPromo ? 'story-card--promo' : '' }}"
+             onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'">
+
           <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
+
+          {{-- Badge de estado (siempre visible) --}}
           <div class="card-tag">
-            Narración
-            <span class="ml-2">
-              @switch($narracion->permiso_lectura)
-                @case('publico')
-                  <i class="bi bi-globe text-blue-600" title="Público"></i>
-                  @break
-                @case('seguidores')
-                  <i class="bi bi-people-fill text-purple-600" title="Solo seguidores"></i>
-                  @break
-                @case('privado')
-                  <i class="bi bi-lock-fill text-red-600" title="Privado"></i>
-                  @break
-              @endswitch
-            </span>
+            @if($esPromo)
+              <span style="color:var(--gold);">Vista previa</span>
+            @else
+              Narración
+            @endif
+
+            {{-- Permiso de lectura (siempre visible) --}}
+            @if($narracion->permiso_lectura === 'seguidores')
+              <span title="Solo suscriptores" style="margin-left:0.5rem; color:var(--accent);">
+                <i class="bi bi-envelope-heart-fill"></i>
+              </span>
+            @elseif($narracion->permiso_lectura === 'privado')
+              <span title="Privado" style="margin-left:0.5rem; color:var(--ink-muted);">
+                <i class="bi bi-lock-fill"></i>
+              </span>
+            @else
+              <span title="Público" style="margin-left:0.5rem; color:var(--ink-muted); opacity:0.4;">
+                <i class="bi bi-globe2"></i>
+              </span>
+            @endif
+
+            {{-- Fecha futura (solo admin la ve) --}}
+            @if($esAdmin && $narracion->fecha_publicacion->isFuture())
+              <span title="Publicación programada" style="margin-left:0.3rem; color:var(--gold);">
+                <i class="bi bi-clock-fill"></i>
+              </span>
+            @endif
+
+            {{-- Contador de palabras --}}
+            <span style="margin-left:0.5rem; opacity:0.55;">· {{ $narracion->palabra_count }} pal.</span>
           </div>
+
           <div class="card-title">{{ $narracion->titulo }}</div>
           <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>
-          <p class="card-excerpt">{!! Str::limit(strip_tags($narracion->contenido), 120) !!}</p>
+
+          {{-- Excerpt: 100 chars para promocion, 120 normal --}}
+          <p class="card-excerpt">
+            {{ Str::limit(strip_tags($narracion->contenido), $esPromo ? 100 : 120) }}
+          </p>
+
+          {{-- Etiqueta inferior según estado y rol --}}
+          @if($esPromo)
+            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold);">
+              <i class="bi bi-eye"></i> Solo vista previa
+            </div>
+          @elseif($narracion->permiso_lectura === 'privado')
+            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-muted);">
+              <i class="bi bi-lock-fill"></i> Solo visible para ti
+            </div>
+          @elseif($narracion->permiso_lectura === 'seguidores' && !$esSubscriptor && !$esAdmin)
+            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent);">
+              <i class="bi bi-envelope-heart-fill"></i> Requiere suscripción
+            </div>
+          @endif
+
         </div>
       @endforeach
     </div>
 
-    <!-- Pagination -->
-    <div class="mt-12 flex justify-center">
-        {{ $narraciones->links() }}
-    </div>
+    {{-- ── PAGINACIÓN ── --}}
+    {{ $narraciones->links('pagination.literario') }}
+
+    {{-- ── TEASER PARA VISITANTES ANÓNIMOS ── --}}
+    @if(!$esSubscriptor && !$esAdmin && $ocultas->isNotEmpty())
+      <div style="margin-top:3rem; border-top:1px solid var(--parchment-dark); padding-top:2rem; text-align:center;">
+        <p style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.35em; text-transform:uppercase; color:var(--accent); margin-bottom:0.75rem;">
+          Algunos textos son exclusivos para suscriptores
+        </p>
+        <p style="font-family:var(--serif); font-style:italic; color:var(--ink-muted); font-size:0.95rem; margin-bottom:1.25rem; line-height:1.7;">
+          {{ $ocultas->implode(' · ') }}
+        </p>
+        <a href="{{ route('suscripcion.form') }}" class="read-more">
+          Suscribirme gratis →
+        </a>
+      </div>
+    @endif
 
   @else
-    <div class="text-center py-20">
-        <div class="text-stone-400 mb-8">
-            <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-            </svg>
-        </div>
-        <h3 class="text-2xl font-serif font-medium text-stone-900 mb-4">No hay narraciones publicadas</h3>
-        <p class="text-stone-600 text-lg">Las primeras historias pronto estarán disponibles.</p>
+    <div style="text-align:center; padding:5rem 0;">
+      <p style="font-family:var(--serif); font-size:1.5rem; color:var(--ink-muted);">
+        Aún no hay narraciones publicadas.
+      </p>
     </div>
   @endif
 
