@@ -163,15 +163,15 @@ DB_PASSWORD=
 MAIL_MAILER=log
 # En producción:
 # MAIL_MAILER=smtp
-# MAIL_HOST=smtp.tu-proveedor.com
+# MAIL_HOST=
 # MAIL_PORT=587
-# MAIL_USERNAME=noreply@artacho.org
-# MAIL_PASSWORD=tu_contraseña
-# MAIL_FROM_ADDRESS=noreply@artacho.org
+# MAIL_USERNAME=
+# MAIL_PASSWORD=
+# MAIL_FROM_ADDRESS=
 # MAIL_FROM_NAME="Memorias sin orden"
 
 # Contraseña del usuario admin inicial (usado por AdminUserSeeder)
-SEEDER_ADMIN_PASSWORD=contraseña_segura
+SEEDER_ADMIN_PASSWORD=
 ```
 
 ### Credenciales por defecto (seeder)
@@ -194,11 +194,11 @@ APP_DEBUG=false
 APP_URL=https://h.artacho.org
 
 MAIL_MAILER=smtp
-MAIL_HOST=smtp.tu-proveedor.com
+MAIL_HOST=
 MAIL_PORT=587
-MAIL_USERNAME=noreply@artacho.org
-MAIL_PASSWORD=tu_contraseña
-MAIL_FROM_ADDRESS=noreply@artacho.org
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM_ADDRESS=
 MAIL_FROM_NAME="Memorias sin orden"
 
 SESSION_ENCRYPT=true
