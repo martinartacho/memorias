@@ -139,33 +139,50 @@ document.addEventListener('DOMContentLoaded', function () {
     recog.interimResults = true;
 
     /* ── Mapa de puntuación hablada → símbolo ──────────────────────────────
-       Orden importante: frases largas antes que palabras sueltas           */
+       Orden: frases largas primero, palabras sueltas al final.
+       Sin \b en palabras con tildes (JavaScript no las trata bien sin flag u) */
     const PUNCT = [
-        [/punto y aparte/gi,            '.\n\n'],
-        [/punto y seguido/gi,           '. '],
-        [/puntos suspensivos/gi,        '… '],
-        [/punto y coma/gi,              '; '],
-        [/punto final/gi,               '. '],
-        [/dos puntos/gi,                ': '],
-        [/signo de interrogaci[oó]n/gi, '? '],
-        [/signo de exclamaci[oó]n/gi,   '! '],
-        [/abrir par[eé]ntesis/gi,       '('],
-        [/cerrar par[eé]ntesis/gi,      ') '],
-        [/abrir comillas/gi,            '«'],
-        [/cerrar comillas/gi,           '» '],
-        [/nuevo p[aá]rrafo/gi,          '\n\n'],
-        [/nueva l[ií]nea/gi,            '\n'],
-        [/\bpunto\b/gi,                 '. '],   // después de "punto y..."
-        [/\bcoma\b/gi,                  ', '],   // después de "punto y coma"
-        [/\binterrogaci[oó]n\b/gi,      '? '],
-        [/\bexclamaci[oó]n\b/gi,        '! '],
-        [/\bgu[ií][oó]n\b/gi,           ' — '],
+        [/punto y aparte/gi,              '.\n\n'],
+        [/punto y seguido/gi,             '. '],
+        [/punto y coma/gi,                '; '],
+        [/puntos? suspensivos?/gi,        '… '],  // singular y plural
+        [/punto final/gi,                 '. '],
+        [/dos puntos/gi,                  ': '],
+        [/salto de p[aá]rrafo/gi,         '\n\n'],
+        [/nuevo p[aá]rrafo/gi,            '\n\n'],
+        [/nueva l[ií]nea/gi,              '\n'],
+        [/signo de interrogaci[oó]n/gi,   '? '],
+        [/signo de exclamaci[oó]n/gi,     '! '],
+        [/abrir par[eé]ntesis/gi,         '('],
+        [/cerrar par[eé]ntesis/gi,        ') '],
+        [/abrir comillas/gi,              '«'],
+        [/cerrar comillas/gi,             '» '],
+        // Palabras sueltas — sin \b para tildes, lo bastante específicas
+        [/(^|\s)punto(\s|$)/gi,           '$1. '],
+        [/(^|\s)coma(\s|$)/gi,            '$1, '],
+        [/interrogaci[oó]n/gi,            '? '],
+        [/exclamaci[oó]n/gi,              '! '],
+        [/gui[oó]n/gi,                    ' — '],
     ];
 
     function applyPunct(text) {
         let t = text;
         for (const [re, sym] of PUNCT) t = t.replace(re, sym);
         return t.replace(/ {2,}/g, ' ').trim();
+    }
+
+    /* ── Texto interim pendiente de confirmar ── */
+    let pendingInterim = '';
+
+    /* ── Añadir texto al área con espaciado inteligente ── */
+    function appendText(raw) {
+        const processed = applyPunct(raw);
+        if (!processed) return;
+        const prev  = dictated.value;
+        const space = prev.length && !/[\s\n(«]$/.test(prev) && !/^[,\.;:\?!)\»…\n]/.test(processed) ? ' ' : '';
+        dictated.value += space + processed;
+        dictated.scrollTop = dictated.scrollHeight;
+        sync();
     }
 
     /* ── Actualizar contador y habilitar guardar ── */
@@ -187,19 +204,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const t = e.results[i][0].transcript;
             e.results[i].isFinal ? (final += t) : (interim += t);
         }
-        interimTxt.textContent    = interim;
+
+        pendingInterim = interim;                   // guardar por si onend llega antes
+        interimTxt.textContent    = interim || '';
         interimWrap.style.display = interim ? 'block' : 'none';
 
         if (final) {
-            const processed = applyPunct(final);
-            const prev  = dictated.value;
-            // No añadir espacio si el símbolo insertado ya incluye espacio o salto
-            const space = prev.length && !/[\s\n(«]$/.test(prev) && !/^[,\.;:\?!)\»…\n]/.test(processed) ? ' ' : '';
-            dictated.value += space + processed;
+            appendText(final);
+            pendingInterim = '';
             interimTxt.textContent    = '';
             interimWrap.style.display = 'none';
-            dictated.scrollTop = dictated.scrollHeight;
-            sync();
         }
     };
 
@@ -210,10 +224,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.error !== 'no-speech') setState('idle');
     };
 
-    /* ── Al parar por silencio: NO reiniciar (evita eco en móvil)
-          Pasar a estado "paused" para que el usuario retome con un toque ── */
+    /* ── Al parar por silencio: volcar cualquier interim pendiente, luego pausar ── */
     recog.onend = function () {
-        if (state === 'listening') setState('paused');
+        if (state === 'listening') {
+            if (pendingInterim) {
+                appendText(pendingInterim);   // texto que llegó solo como interim
+                pendingInterim = '';
+                interimTxt.textContent    = '';
+                interimWrap.style.display = 'none';
+            }
+            setState('paused');
+        }
     };
 
     /* ── Máquina de estados visual ── */
