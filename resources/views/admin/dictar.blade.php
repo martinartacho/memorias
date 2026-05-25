@@ -171,8 +171,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return t.replace(/ {2,}/g, ' ').trim();
     }
 
-    /* ── Texto interim pendiente de confirmar ── */
-    let pendingInterim = '';
+    /* ── Buffer de la sesión actual (no se escribe al área hasta que para) ── */
+    let sesionFinal   = '';   // resultados marcados isFinal en esta sesión
+    let sesionInterim = '';   // resultado provisional en curso
+    let paroManual    = false;
 
     /* ── Añadir texto al área con espaciado inteligente ── */
     function appendText(raw) {
@@ -183,6 +185,15 @@ document.addEventListener('DOMContentLoaded', function () {
         dictated.value += space + processed;
         dictated.scrollTop = dictated.scrollHeight;
         sync();
+    }
+
+    /* ── Volcar el buffer de sesión al área de texto ── */
+    function flushBuffer() {
+        const todo = (sesionFinal + sesionInterim).trim();
+        if (todo) appendText(todo);
+        sesionFinal = sesionInterim = '';
+        interimTxt.textContent    = '';
+        interimWrap.style.display = 'none';
     }
 
     /* ── Actualizar contador y habilitar guardar ── */
@@ -196,45 +207,35 @@ document.addEventListener('DOMContentLoaded', function () {
         hidden.value = dictated.value;
     }
 
-    /* ── Resultado de reconocimiento ── */
+    /* ── Resultado de reconocimiento ──────────────────────────────────────────
+       Bucle desde 0 (no desde resultIndex) para obtener la transcripción
+       completa de la sesión — Chrome puede corregir resultados anteriores.
+       Solo actualizamos el buffer visual; el textarea se toca en onend.     */
     recog.onresult = function (e) {
-        let interim = '';
-        let final   = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
+        sesionFinal   = '';
+        sesionInterim = '';
+        for (let i = 0; i < e.results.length; i++) {
             const t = e.results[i][0].transcript;
-            e.results[i].isFinal ? (final += t) : (interim += t);
+            e.results[i].isFinal ? (sesionFinal += t) : (sesionInterim += t);
         }
-
-        pendingInterim = interim;                   // guardar por si onend llega antes
-        interimTxt.textContent    = interim || '';
-        interimWrap.style.display = interim ? 'block' : 'none';
-
-        if (final) {
-            appendText(final);
-            pendingInterim = '';
-            interimTxt.textContent    = '';
-            interimWrap.style.display = 'none';
-        }
+        const display = (sesionFinal + sesionInterim).trim();
+        interimTxt.textContent    = display;
+        interimWrap.style.display = display ? 'block' : 'none';
     };
 
     /* ── Errores ── */
     recog.onerror = function (e) {
         if (e.error === 'not-allowed')
             alert('Permiso de micrófono denegado. Actívalo en la configuración del navegador.');
-        if (e.error !== 'no-speech') setState('idle');
+        if (e.error !== 'no-speech') { flushBuffer(); setState('idle'); }
     };
 
-    /* ── Al parar por silencio: volcar cualquier interim pendiente, luego pausar ── */
+    /* ── onend: siempre volcar el buffer y cambiar estado ── */
     recog.onend = function () {
-        if (state === 'listening') {
-            if (pendingInterim) {
-                appendText(pendingInterim);   // texto que llegó solo como interim
-                pendingInterim = '';
-                interimTxt.textContent    = '';
-                interimWrap.style.display = 'none';
-            }
-            setState('paused');
-        }
+        if (state !== 'listening') return;
+        flushBuffer();
+        setState(paroManual ? 'idle' : 'paused');
+        paroManual = false;
     };
 
     /* ── Máquina de estados visual ── */
@@ -268,12 +269,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     micBtn.addEventListener('click', function () {
         if (state === 'listening') {
-            recog.stop();
-            setState('idle');
+            paroManual = true;   // onend sabrá que fue manual → estado idle
+            recog.stop();        // onend vuelca buffer y cambia estado
         } else {
-            // idle o paused → arrancar
+            // idle o paused → nueva sesión
+            sesionFinal = sesionInterim = '';
             try { recog.start(); setState('listening'); }
-            catch (err) { /* ya corriendo, ignorar */ }
+            catch (err) { /* ya corriendo */ }
         }
     });
 
