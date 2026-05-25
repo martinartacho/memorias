@@ -60,6 +60,105 @@
       {{-- Título --}}
       <h2>{{ $narracion->titulo }}</h2>
 
+      {{-- ── Reproductor de voz ── --}}
+      @php
+        $textoVoz = strip_tags($narracion->estado === 'promocion'
+          ? Str::limit(strip_tags($narracion->contenido), 100)
+          : $narracion->contenido);
+      @endphp
+      <div id="tts-bar" style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <button id="tts-play" type="button"
+          style="display:flex; align-items:center; gap:0.4rem; background:none; border:1px solid var(--parchment-dark); padding:0.3rem 0.85rem; font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-muted); cursor:pointer; transition:all 0.2s;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+          onmouseout="if(!window._ttsPlaying){this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'}">
+          <i class="bi bi-play-fill" id="tts-icon"></i>
+          <span id="tts-label">Escuchar</span>
+        </button>
+        <button id="tts-stop" type="button"
+          style="display:none; align-items:center; gap:0.4rem; background:none; border:1px solid var(--parchment-dark); padding:0.3rem 0.85rem; font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-muted); cursor:pointer;"
+          onmouseover="this.style.borderColor='var(--ink)';this.style.color='var(--ink)'"
+          onmouseout="this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'">
+          <i class="bi bi-stop-fill"></i> Detener
+        </button>
+        <span id="tts-unsupported" style="display:none; font-family:var(--sans); font-size:0.62rem; color:var(--ink-muted);">
+          <i class="bi bi-exclamation-circle"></i> Tu navegador no soporta la lectura en voz alta.
+        </span>
+      </div>
+      <script>
+      (function() {
+        const synth   = window.speechSynthesis;
+        const playBtn = document.getElementById('tts-play');
+        const stopBtn = document.getElementById('tts-stop');
+        const icon    = document.getElementById('tts-icon');
+        const label   = document.getElementById('tts-label');
+        const texto   = {{ Js::from($textoVoz) }};
+        window._ttsPlaying = false;
+        let utter = null;
+
+        if (!synth) {
+          document.getElementById('tts-unsupported').style.display = 'inline';
+          playBtn.style.display = 'none';
+          return;
+        }
+
+        function getSpanishVoice() {
+          const voices = synth.getVoices();
+          return voices.find(v => v.lang === 'es-ES') ||
+                 voices.find(v => v.lang.startsWith('es')) ||
+                 null;
+        }
+
+        function setPlaying(on) {
+          window._ttsPlaying = on;
+          icon.className  = on ? 'bi bi-pause-fill' : 'bi bi-play-fill';
+          label.textContent = on ? 'Pausar' : (utter ? 'Continuar' : 'Escuchar');
+          playBtn.style.borderColor = on ? 'var(--accent)' : 'var(--parchment-dark)';
+          playBtn.style.color       = on ? 'var(--accent)' : 'var(--ink-muted)';
+          stopBtn.style.display     = on ? 'flex' : 'none';
+        }
+
+        function startReading() {
+          synth.cancel();
+          utter = new SpeechSynthesisUtterance(texto);
+          utter.lang  = 'es-ES';
+          utter.rate  = 0.95;
+          utter.pitch = 1;
+          const voice = getSpanishVoice();
+          if (voice) utter.voice = voice;
+          utter.onstart = () => setPlaying(true);
+          utter.onend   = () => { setPlaying(false); utter = null; label.textContent = 'Escuchar'; };
+          utter.onerror = () => { setPlaying(false); utter = null; };
+          synth.speak(utter);
+        }
+
+        playBtn.addEventListener('click', function() {
+          if (!synth.speaking) {
+            startReading();
+          } else if (synth.paused) {
+            synth.resume();
+            setPlaying(true);
+          } else {
+            synth.pause();
+            setPlaying(false);
+            icon.className   = 'bi bi-play-fill';
+            label.textContent = 'Continuar';
+          }
+        });
+
+        stopBtn.addEventListener('click', function() {
+          synth.cancel();
+          setPlaying(false);
+          utter = null;
+          label.textContent = 'Escuchar';
+        });
+
+        // Las voces se cargan de forma asíncrona en Chrome
+        if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
+          speechSynthesis.onvoiceschanged = getSpanishVoice;
+        }
+      })();
+      </script>
+
       {{-- Contenido: completo o truncado según estado --}}
       @if($narracion->estado === 'promocion')
 
