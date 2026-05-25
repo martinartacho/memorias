@@ -1,5 +1,5 @@
 @extends('layouts.literario')
-@section('title', 'Editar línea · {{ $linea->titulo }} · Memorias sin orden')
+@section('title', 'Editar línea · ' . $linea->titulo . ' · Memorias sin orden')
 
 @section('content')
 <div class="container">
