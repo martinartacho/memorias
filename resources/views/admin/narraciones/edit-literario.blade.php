@@ -316,7 +316,25 @@
                           <button type="button" class="editor-btn" data-command="removeFormat" title="Limpiar formato">
                               ✖
                           </button>
+                          <div class="editor-separator"></div>
+                          {{-- ── Botón dictado ── --}}
+                          <button type="button" id="dictate-btn"
+                              class="editor-btn"
+                              title="Dictar por voz (es-ES) — Chrome/Edge"
+                              style="gap:4px; display:flex; align-items:center;">
+                              <i class="bi bi-mic" id="dictate-icon"></i>
+                              <span id="dictate-label" style="font-size:11px;">Dictar</span>
+                          </button>
                       </div>
+                      {{-- Aviso dictado activo --}}
+                      <div id="dictate-status" style="display:none; padding:4px 12px; background:#fef3c7; border:1px solid #fbbf24; border-top:none; font-family:var(--sans); font-size:0.7rem; color:#92400e; align-items:center; gap:6px;">
+                          <span style="display:inline-block; width:8px; height:8px; background:#dc2626; border-radius:50%; animation:pulse-red 1s infinite;"></span>
+                          Escuchando… Habla ahora. Haz clic en <strong>Detener</strong> cuando termines.
+                          <span id="dictate-interim" style="color:#78350f; font-style:italic; margin-left:4px;"></span>
+                      </div>
+                      <style>
+                        @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.3} }
+                      </style>
                       <div class="editor-scroll-wrap">
                           <div class="editor-content" id="editor-content" contenteditable="true">
                               {!! old('contenido', $narracion->contenido) !!}
@@ -639,6 +657,131 @@ document.addEventListener('DOMContentLoaded', function() {
     updateToolbarState();
     
     console.log('Editor local inicializado correctamente');
+
+    // ── Dictado por voz (SpeechRecognition) ──────────────────────────────────
+    const dictateBtn    = document.getElementById('dictate-btn');
+    const dictateIcon   = document.getElementById('dictate-icon');
+    const dictateLabel  = document.getElementById('dictate-label');
+    const dictateStatus = document.getElementById('dictate-status');
+    const dictateInterim= document.getElementById('dictate-interim');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        // Navegador sin soporte (Firefox): ocultar el botón
+        dictateBtn.style.display = 'none';
+    } else {
+        const recog = new SpeechRecognition();
+        recog.lang       = 'es-ES';
+        recog.continuous = true;       // no se detiene tras una pausa
+        recog.interimResults = true;   // muestra texto provisional mientras hablas
+
+        let isListening  = false;
+        let savedRange   = null;       // guarda posición del cursor en el editor
+
+        function saveCaretPosition() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && editorContent.contains(sel.anchorNode)) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+        }
+
+        function insertTextAtCaret(text) {
+            editorContent.focus();
+            const sel = window.getSelection();
+            let range;
+            if (savedRange) {
+                range = savedRange.cloneRange();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else if (sel && sel.rangeCount > 0) {
+                range = sel.getRangeAt(0);
+            } else {
+                // Sin posición guardada: añadir al final
+                range = document.createRange();
+                range.selectNodeContents(editorContent);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            range.deleteContents();
+            const node = document.createTextNode(text);
+            range.insertNode(node);
+            range.setStartAfter(node);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            savedRange = range.cloneRange();
+            updateHiddenInput();
+            updateWordCount();
+            updatePreview();
+        }
+
+        recog.onresult = function(e) {
+            let interim = '';
+            let finalTxt = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const t = e.results[i][0].transcript;
+                if (e.results[i].isFinal) {
+                    finalTxt += t;
+                } else {
+                    interim += t;
+                }
+            }
+            dictateInterim.textContent = interim;
+            if (finalTxt) {
+                // Añadir espacio previo si el editor no termina en espacio
+                const prev = editorContent.textContent;
+                const prefix = prev.length > 0 && !prev.endsWith(' ') ? ' ' : '';
+                insertTextAtCaret(prefix + finalTxt);
+                dictateInterim.textContent = '';
+            }
+        };
+
+        recog.onerror = function(e) {
+            if (e.error === 'not-allowed') {
+                alert('Permiso de micrófono denegado. Actívalo en la configuración del navegador.');
+            }
+            stopDictation();
+        };
+
+        recog.onend = function() {
+            // Si sigue activo (pausa de silencio), reiniciar
+            if (isListening) recog.start();
+        };
+
+        function startDictation() {
+            saveCaretPosition();
+            recog.start();
+            isListening = true;
+            dictateIcon.className  = 'bi bi-mic-fill';
+            dictateLabel.textContent = 'Detener';
+            dictateBtn.style.background   = '#dc2626';
+            dictateBtn.style.color        = '#fff';
+            dictateBtn.style.borderColor  = '#dc2626';
+            dictateStatus.style.display   = 'flex';
+        }
+
+        function stopDictation() {
+            isListening = false;
+            recog.stop();
+            dictateIcon.className  = 'bi bi-mic';
+            dictateLabel.textContent = 'Dictar';
+            dictateBtn.style.background  = '';
+            dictateBtn.style.color       = '';
+            dictateBtn.style.borderColor = '';
+            dictateStatus.style.display  = 'none';
+            dictateInterim.textContent   = '';
+        }
+
+        dictateBtn.addEventListener('click', function() {
+            isListening ? stopDictation() : startDictation();
+        });
+
+        // Guardar posición del cursor mientras se edita manualmente
+        editorContent.addEventListener('click', saveCaretPosition);
+        editorContent.addEventListener('keyup', saveCaretPosition);
+    }
 });
 
 function togglePreview() {
