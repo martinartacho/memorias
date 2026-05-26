@@ -105,9 +105,11 @@ class NarracionController extends Controller
 
         $esAdmin = $this->esAdmin();
 
+        $esSubscriptor = $this->esSubscritorVerificado($request);
+
         // Admin ve todo sin restricciones
         if ($esAdmin) {
-            return view('narraciones.show-literario', compact('narracion'));
+            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor'));
         }
 
         // Privadas: nunca accesibles públicamente
@@ -117,7 +119,7 @@ class NarracionController extends Controller
 
         $canAccess = match ($narracion->permiso_lectura) {
             'publico'    => true,
-            'seguidores' => $this->esSubscritorVerificado($request),
+            'seguidores' => $esSubscriptor,
             default      => false,
         };
 
@@ -128,7 +130,7 @@ class NarracionController extends Controller
         // Promocion: acceso permitido pero contenido limitado en la vista
         $narracion->increment('count_read');
 
-        return view('narraciones.show-literario', compact('narracion'));
+        return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
