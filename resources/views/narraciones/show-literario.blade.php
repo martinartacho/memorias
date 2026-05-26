@@ -2,7 +2,128 @@
 
 @section('title', $narracion->titulo . ' · Memorias sin orden')
 
+@push('styles')
+<style>
+/* ── Barra TTS sticky ─────────────────────────────────────────────────────── */
+#tts-bar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: rgba(245, 240, 232, 0.97);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid #d6cfc4;
+  padding: 0.6rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* Botón play circular */
+#tts-play-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  padding: 0;
+}
+#tts-play-btn:hover   { background: var(--accent); color: var(--parchment); }
+#tts-play-btn.playing { background: var(--accent); color: var(--parchment); }
+
+/* Info central */
+.tts-info { flex: 1; min-width: 0; }
+.tts-label {
+  font-family: var(--sans);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tts-progress-wrap { display: flex; align-items: center; gap: 0.5rem; }
+.tts-track {
+  flex: 1; height: 2px;
+  background: #d6cfc4;
+  border-radius: 2px; overflow: hidden;
+}
+.tts-track-fill {
+  height: 100%; width: 0%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s linear;
+}
+.tts-pct {
+  font-family: var(--sans);
+  font-size: 0.58rem;
+  color: var(--ink-muted);
+  width: 28px; text-align: right; flex-shrink: 0;
+}
+
+/* Selector de voz */
+#tts-voice-select {
+  border: 1px solid #d6cfc4;
+  background: white;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.6rem;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer; outline: none;
+  max-width: 130px;
+  display: none; /* se muestra cuando hay más de 1 voz */
+}
+#tts-voice-select:focus { border-color: var(--accent); }
+
+/* Botón stop */
+#tts-stop-btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid #d6cfc4;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1; padding: 0;
+}
+#tts-stop-btn:hover { border-color: #dc2626; color: #dc2626; }
+</style>
+@endpush
+
 @section('content')
+
+{{-- ── Barra TTS sticky ─────────────────────────────────────────────────────── --}}
+<div id="tts-bar">
+  {{-- Botón play/pausa --}}
+  <button id="tts-play-btn" title="Escuchar / Pausar" aria-label="Reproducir">▶</button>
+
+  {{-- Info + barra de progreso --}}
+  <div class="tts-info">
+    <div class="tts-label" id="tts-label">Escuchar narración</div>
+    <div class="tts-progress-wrap">
+      <div class="tts-track"><div class="tts-track-fill" id="tts-fill"></div></div>
+      <div class="tts-pct" id="tts-pct"></div>
+    </div>
+  </div>
+
+  {{-- Selector de voz (se muestra solo si hay varias) --}}
+  <select id="tts-voice-select" title="Voz" aria-label="Seleccionar voz"></select>
+
+  {{-- Botón stop --}}
+  <button id="tts-stop-btn" title="Detener">■</button>
+</div>
+
 <main class="container">
 
   {{-- ── CABECERA DOS COLUMNAS ── --}}
@@ -60,104 +181,17 @@
       {{-- Título --}}
       <h2>{{ $narracion->titulo }}</h2>
 
-      {{-- ── Reproductor de voz ── --}}
+      {{-- ── Reproductor de voz (sticky, fuera del flujo del texto) ── --}}
       @php
-        $textoVoz = strip_tags($narracion->estado === 'promocion'
-          ? Str::limit(strip_tags($narracion->contenido), 100)
-          : $narracion->contenido);
+        // Texto limpio para la voz
+        $textoVoz = trim(preg_replace('/\s+/', ' ',
+          strip_tags(html_entity_decode(
+            $narracion->estado === 'promocion'
+              ? Str::limit(strip_tags($narracion->contenido), 500)
+              : $narracion->contenido
+          ))
+        ));
       @endphp
-      <div id="tts-bar" style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
-        <button id="tts-play" type="button"
-          style="display:flex; align-items:center; gap:0.4rem; background:none; border:1px solid var(--parchment-dark); padding:0.3rem 0.85rem; font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-muted); cursor:pointer; transition:all 0.2s;"
-          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-          onmouseout="if(!window._ttsPlaying){this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'}">
-          <i class="bi bi-play-fill" id="tts-icon"></i>
-          <span id="tts-label">Escuchar</span>
-        </button>
-        <button id="tts-stop" type="button"
-          style="display:none; align-items:center; gap:0.4rem; background:none; border:1px solid var(--parchment-dark); padding:0.3rem 0.85rem; font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-muted); cursor:pointer;"
-          onmouseover="this.style.borderColor='var(--ink)';this.style.color='var(--ink)'"
-          onmouseout="this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'">
-          <i class="bi bi-stop-fill"></i> Detener
-        </button>
-        <span id="tts-unsupported" style="display:none; font-family:var(--sans); font-size:0.62rem; color:var(--ink-muted);">
-          <i class="bi bi-exclamation-circle"></i> Tu navegador no soporta la lectura en voz alta.
-        </span>
-      </div>
-      <script>
-      (function() {
-        const synth   = window.speechSynthesis;
-        const playBtn = document.getElementById('tts-play');
-        const stopBtn = document.getElementById('tts-stop');
-        const icon    = document.getElementById('tts-icon');
-        const label   = document.getElementById('tts-label');
-        const texto   = {{ Js::from($textoVoz) }};
-        window._ttsPlaying = false;
-        let utter = null;
-
-        if (!synth) {
-          document.getElementById('tts-unsupported').style.display = 'inline';
-          playBtn.style.display = 'none';
-          return;
-        }
-
-        function getSpanishVoice() {
-          const voices = synth.getVoices();
-          return voices.find(v => v.lang === 'es-ES') ||
-                 voices.find(v => v.lang.startsWith('es')) ||
-                 null;
-        }
-
-        function setPlaying(on) {
-          window._ttsPlaying = on;
-          icon.className  = on ? 'bi bi-pause-fill' : 'bi bi-play-fill';
-          label.textContent = on ? 'Pausar' : (utter ? 'Continuar' : 'Escuchar');
-          playBtn.style.borderColor = on ? 'var(--accent)' : 'var(--parchment-dark)';
-          playBtn.style.color       = on ? 'var(--accent)' : 'var(--ink-muted)';
-          stopBtn.style.display     = on ? 'flex' : 'none';
-        }
-
-        function startReading() {
-          synth.cancel();
-          utter = new SpeechSynthesisUtterance(texto);
-          utter.lang  = 'es-ES';
-          utter.rate  = 0.95;
-          utter.pitch = 1;
-          const voice = getSpanishVoice();
-          if (voice) utter.voice = voice;
-          utter.onstart = () => setPlaying(true);
-          utter.onend   = () => { setPlaying(false); utter = null; label.textContent = 'Escuchar'; };
-          utter.onerror = () => { setPlaying(false); utter = null; };
-          synth.speak(utter);
-        }
-
-        playBtn.addEventListener('click', function() {
-          if (!synth.speaking) {
-            startReading();
-          } else if (synth.paused) {
-            synth.resume();
-            setPlaying(true);
-          } else {
-            synth.pause();
-            setPlaying(false);
-            icon.className   = 'bi bi-play-fill';
-            label.textContent = 'Continuar';
-          }
-        });
-
-        stopBtn.addEventListener('click', function() {
-          synth.cancel();
-          setPlaying(false);
-          utter = null;
-          label.textContent = 'Escuchar';
-        });
-
-        // Las voces se cargan de forma asíncrona en Chrome
-        if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
-          speechSynthesis.onvoiceschanged = getSpanishVoice;
-        }
-      })();
-      </script>
 
       {{-- Contenido: completo o truncado según estado --}}
       @if($narracion->estado === 'promocion')
@@ -332,4 +366,181 @@
   </div>
 
 </main>
+
+<script>
+(function () {
+  const synth     = window.speechSynthesis;
+  const playBtn   = document.getElementById('tts-play-btn');
+  const stopBtn   = document.getElementById('tts-stop-btn');
+  const label     = document.getElementById('tts-label');
+  const fill      = document.getElementById('tts-fill');
+  const pct       = document.getElementById('tts-pct');
+  const voiceSel  = document.getElementById('tts-voice-select');
+
+  // Texto limpio inyectado desde PHP
+  const texto     = {{ Js::from($textoVoz) }};
+  const totalChars = texto.length;
+
+  // Si no hay soporte, ocultar la barra
+  if (!synth) {
+    document.getElementById('tts-bar').style.display = 'none';
+    return;
+  }
+
+  let utter    = null;
+  let state    = 'idle'; // idle | playing | paused
+  const STORAGE_KEY = 'tts_preferred_voice';
+
+  /* ── Selección de voces ─────────────────────────────────────────────────── */
+  function getVoices() {
+    const all = synth.getVoices();
+    // Filtrar español, priorizar es-ES, luego online/natural, luego el resto
+    const es = all.filter(v => v.lang.startsWith('es'));
+    es.sort((a, b) => {
+      // 1. es-ES antes que otros
+      const aES = a.lang === 'es-ES' ? 0 : 1;
+      const bES = b.lang === 'es-ES' ? 0 : 1;
+      if (aES !== bES) return aES - bES;
+      // 2. Online/Natural antes que local
+      const aOn = /online|natural/i.test(a.name) ? 0 : 1;
+      const bOn = /online|natural/i.test(b.name) ? 0 : 1;
+      return aOn - bOn;
+    });
+    return es;
+  }
+
+  function populateVoiceSelect(voices) {
+    voiceSel.innerHTML = '';
+    const saved = localStorage.getItem(STORAGE_KEY);
+    voices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      // Nombre corto: quitar " Online (Natural)" y similares del final
+      const shortName = v.name
+        .replace(/\s*online\s*/i, ' ')
+        .replace(/\s*\(natural\)\s*/i, '')
+        .replace(/\s*-\s*spanish\s*.*/i, '')
+        .trim();
+      const isOnline = /online|natural/i.test(v.name) || !v.localService;
+      opt.textContent = shortName + (isOnline ? ' ★' : '');
+      if (v.name === saved) opt.selected = true;
+      voiceSel.appendChild(opt);
+    });
+    // Mostrar selector solo si hay más de 1 voz
+    if (voices.length > 1) voiceSel.style.display = 'block';
+  }
+
+  function getBestVoice(voices) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const found = voices.find(v => v.name === saved);
+      if (found) return found;
+    }
+    return voices[0] || null; // ya ordenadas: online es-ES primero
+  }
+
+  voiceSel.addEventListener('change', () => {
+    localStorage.setItem(STORAGE_KEY, voiceSel.value);
+    // Si estaba reproduciendo, reiniciar con la nueva voz
+    if (state !== 'idle') {
+      synth.cancel();
+      startReading();
+    }
+  });
+
+  /* ── Progreso ──────────────────────────────────────────────────────────── */
+  function setProgress(charIndex, done) {
+    const p = done ? 100 : Math.min(99, Math.round((charIndex / totalChars) * 100));
+    fill.style.width    = p + '%';
+    pct.textContent     = p + '%';
+  }
+
+  function resetProgress() {
+    fill.style.width = '0%';
+    pct.textContent  = '';
+  }
+
+  /* ── Estado visual ─────────────────────────────────────────────────────── */
+  function setState(s) {
+    state = s;
+    if (s === 'playing') {
+      playBtn.textContent = '⏸';
+      playBtn.classList.add('playing');
+      label.textContent   = 'Reproduciendo…';
+    } else if (s === 'paused') {
+      playBtn.textContent = '▶';
+      playBtn.classList.remove('playing');
+      label.textContent   = 'En pausa · toca para continuar';
+    } else {
+      playBtn.textContent = '▶';
+      playBtn.classList.remove('playing');
+      label.textContent   = 'Escuchar narración';
+      resetProgress();
+    }
+  }
+
+  /* ── Lectura ────────────────────────────────────────────────────────────── */
+  function startReading() {
+    synth.cancel();
+    const voices = getVoices();
+    const voice  = getBestVoice(voices);
+
+    utter       = new SpeechSynthesisUtterance(texto);
+    utter.lang  = 'es-ES';
+    utter.rate  = 0.88;
+    utter.pitch = 1.0;
+    if (voice) utter.voice = voice;
+
+    utter.onboundary = (e) => {
+      if (e.name === 'word') setProgress(e.charIndex, false);
+    };
+    utter.onend = () => {
+      setProgress(0, true);
+      label.textContent = 'Narración completada';
+      setTimeout(() => setState('idle'), 1800);
+    };
+    utter.onerror = (e) => {
+      if (e.error !== 'interrupted') setState('idle');
+    };
+
+    synth.speak(utter);
+    setState('playing');
+  }
+
+  /* ── Controles ─────────────────────────────────────────────────────────── */
+  playBtn.addEventListener('click', () => {
+    if (state === 'idle') {
+      startReading();
+    } else if (state === 'playing') {
+      synth.pause();
+      setState('paused');
+    } else if (state === 'paused') {
+      synth.resume();
+      setState('playing');
+    }
+  });
+
+  stopBtn.addEventListener('click', () => {
+    synth.cancel();
+    setState('idle');
+    utter = null;
+  });
+
+  window.addEventListener('beforeunload', () => synth.cancel());
+
+  /* ── Inicializar voces (async en Chrome) ─────────────────────────────── */
+  function initVoices() {
+    const voices = getVoices();
+    if (voices.length > 0) populateVoiceSelect(voices);
+  }
+
+  if (synth.getVoices().length > 0) {
+    initVoices();
+  } else {
+    synth.onvoiceschanged = () => { synth.onvoiceschanged = null; initVoices(); };
+    setTimeout(initVoices, 1500); // fallback
+  }
+})();
+</script>
+
 @endsection
