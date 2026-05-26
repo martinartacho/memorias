@@ -128,7 +128,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Nodos
     Route::post('/lineas/{linea}/nodos', [App\Http\Controllers\LineaController::class, 'addNodo'])->name('lineas.nodos.add');
     Route::delete('/lineas/{linea}/nodos/{nodo}', [App\Http\Controllers\LineaController::class, 'removeNodo'])->name('lineas.nodos.remove');
-    // Conexiones
+    // Reordenar (lineal) — drag & drop
+    Route::post('/lineas/{linea}/reordenar', [App\Http\Controllers\LineaController::class, 'reordenar'])->name('lineas.reordenar');
+    // Conexiones (ramificada)
     Route::post('/lineas/{linea}/conexiones', [App\Http\Controllers\LineaController::class, 'addConexion'])->name('lineas.conexiones.add');
     Route::delete('/lineas/{linea}/conexiones/{conexion}', [App\Http\Controllers\LineaController::class, 'removeConexion'])->name('lineas.conexiones.remove');
 });

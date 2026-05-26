@@ -75,13 +75,66 @@ class LineaController extends Controller
     {
         $this->autorizarLinea($linea);
 
-        $linea->load(['nodos.narracion', 'nodos.conexionesSalientes.hasta.narracion']);
+        $linea->load([
+            'nodos'    => fn($q) => $q->orderBy('orden'),
+            'nodos.narracion',
+            'nodos.conexionesSalientes.hasta.narracion',
+        ]);
         $disponibles = $this->narracionesDisponibles();
 
         // Narraciones ya en la línea
         $enLinea = $linea->nodos->pluck('narracion_id')->toArray();
 
         return view('admin.lineas.edit', compact('linea', 'disponibles', 'enLinea'));
+    }
+
+    // ── Reordenar nodos lineales (drag & drop) ────────────────────────────────
+
+    public function reordenar(Request $request, Linea $linea)
+    {
+        $this->autorizarLinea($linea);
+
+        if ($linea->tipo !== 'lineal') {
+            return response()->json(['error' => 'Solo disponible para líneas lineales.'], 422);
+        }
+
+        $request->validate([
+            'orden'   => 'required|array|min:1',
+            'orden.*' => 'integer|exists:linea_narracion,id',
+        ]);
+
+        $nodoIds = $request->orden;
+
+        // Verificar que todos los nodos pertenecen a esta línea
+        $idsEnLinea = $linea->nodos()->pluck('id')->toArray();
+        foreach ($nodoIds as $id) {
+            if (!in_array($id, $idsEnLinea)) {
+                return response()->json(['error' => 'Nodo no pertenece a esta línea.'], 422);
+            }
+        }
+
+        // Actualizar campo orden
+        foreach ($nodoIds as $position => $nodoId) {
+            LineaNarracion::where('id', $nodoId)->update(['orden' => $position]);
+        }
+
+        // Eliminar todas las conexiones salientes de esta línea
+        LineaConexion::whereIn('from_id', $idsEnLinea)->delete();
+
+        // Reconstruir conexiones secuenciales: 0→1→2→…
+        for ($i = 0; $i < count($nodoIds) - 1; $i++) {
+            LineaConexion::create([
+                'from_id'  => $nodoIds[$i],
+                'to_id'    => $nodoIds[$i + 1],
+                'etiqueta' => null,
+                'orden'    => $i,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Orden guardado · ' . count($nodoIds) . ' narraciones · ' . (count($nodoIds) - 1) . ' conexiones reconstruidas.',
+        ]);
     }
 
     public function update(Request $request, Linea $linea)
