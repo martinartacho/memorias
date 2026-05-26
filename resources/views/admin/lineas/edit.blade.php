@@ -97,11 +97,6 @@
                       <span style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; color:var(--gold); border:1px solid var(--gold); padding:0.1rem 0.4rem; margin-right:0.4rem;">{{ $nodo->etiqueta }}</span>
                     @endif
                     <span style="font-family:var(--serif); font-weight:700; color:var(--ink);">{{ $nodo->narracion->titulo }}</span>
-                    <div style="font-family:var(--sans); font-size:0.6rem; color:var(--ink-muted); margin-top:0.1rem;">
-                      @if($loop->first) <span style="color:var(--accent);">● inicio</span> &nbsp; @endif
-                      @if($loop->last)  <span>● fin</span> @endif
-                      @if(!$loop->first && !$loop->last) <span>↑ continúa</span> @endif
-                    </div>
                   </div>
                   {{-- Quitar --}}
                   <form action="{{ route('admin.lineas.nodos.remove', [$linea, $nodo]) }}" method="POST"
