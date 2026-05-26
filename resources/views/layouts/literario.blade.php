@@ -489,6 +489,7 @@
         .modal-title { font-size: 1.6rem; }
       }
     </style>
+    @stack('styles')
 </head>
 <body>
 
