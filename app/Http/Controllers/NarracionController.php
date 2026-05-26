@@ -135,18 +135,58 @@ class NarracionController extends Controller
     // Administración
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
         $user  = auth()->user();
-        $query = Narracion::orderByFecha();
+        $query = Narracion::query();
 
         // Editor: solo sus propias narraciones
         if ($user->isEditor()) {
             $query->where('user_id', $user->id);
         }
 
-        $narraciones = $query->paginate(10);
-        return view('admin.narraciones.index-literario', compact('narraciones'));
+        // Búsqueda por título/contenido
+        if ($q = trim($request->input('q', ''))) {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('titulo', 'like', "%{$q}%")
+                    ->orWhere('contenido', 'like', "%{$q}%");
+            });
+        }
+
+        // Filtro por estado
+        if ($estado = $request->input('estado')) {
+            $query->where('estado', $estado);
+        }
+
+        // Filtro por permiso de lectura
+        if ($permiso = $request->input('permiso')) {
+            $query->where('permiso_lectura', $permiso);
+        }
+
+        // Ordenación
+        match ($request->input('orden', 'fecha_desc')) {
+            'fecha_asc'   => $query->orderBy('fecha_publicacion', 'asc'),
+            'titulo_asc'  => $query->orderBy('titulo', 'asc'),
+            'titulo_desc' => $query->orderBy('titulo', 'desc'),
+            'lecturas'    => $query->orderBy('count_read', 'desc'),
+            default       => $query->orderBy('fecha_publicacion', 'desc'),
+        };
+
+        // Stats sobre el scope del usuario (sin filtros de búsqueda)
+        $baseStats = Narracion::query();
+        if ($user->isEditor()) {
+            $baseStats->where('user_id', $user->id);
+        }
+        $stats = [
+            'total'      => (clone $baseStats)->count(),
+            'publicadas' => (clone $baseStats)->where('estado', 'publicado')->count(),
+            'borradores' => (clone $baseStats)->where('estado', 'borrador')->count(),
+            'promocion'  => (clone $baseStats)->where('estado', 'promocion')->count(),
+        ];
+
+        $narraciones = $query->paginate(20)->withQueryString();
+
+        return view('admin.narraciones.index-literario', compact('narraciones', 'stats'));
     }
 
     public function create()
