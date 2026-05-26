@@ -195,12 +195,14 @@
 
       @endif
 
-      {{-- ── Líneas argumentales: navegación siguiente ── --}}
+      {{-- ── Líneas argumentales: navegación siguiente / fin / inicio ── --}}
       @php
         $nodosDeEsta = $narracion->nodosLinea()->with(['linea','conexionesSalientes.hasta.narracion'])->get();
       @endphp
       @foreach($nodosDeEsta as $nodo)
+
         @if($nodo->conexionesSalientes->isNotEmpty())
+          {{-- ── Hay siguiente: mostrar botón de continuación ── --}}
           <div style="margin-top:2rem; padding:1.5rem; border:1px solid var(--parchment-dark); background:var(--parchment-mid);">
             <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:0.75rem;">
               <i class="bi bi-{{ $nodo->linea->esRamificada() ? 'diagram-3' : 'arrow-right-circle' }}"></i>
@@ -233,6 +235,30 @@
               </div>
             @endif
           </div>
+
+        @elseif($nodo->linea->esLineal())
+          {{-- ── Fin de línea lineal: ofrecer volver al inicio ── --}}
+          @php
+            $primerNodo = $nodo->linea->nodos()->orderBy('orden')->with('narracion')->first();
+          @endphp
+          @if($primerNodo && $primerNodo->narracion_id !== $narracion->id)
+            <div style="margin-top:2rem; padding:1.5rem; border:1px solid var(--parchment-dark); background:var(--parchment-mid); text-align:center;">
+              <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:0.75rem;">
+                <i class="bi bi-flag-fill" style="color:var(--accent);"></i>
+                &nbsp;{{ $nodo->linea->titulo }} · Fin
+              </div>
+              <p style="font-family:var(--body); font-size:0.9rem; color:var(--ink-soft); margin-bottom:1.25rem;">
+                Has llegado al final de esta historia.
+              </p>
+              <a href="{{ route('narraciones.show', $primerNodo->narracion->slug) }}"
+                 style="display:inline-flex; align-items:center; gap:0.5rem; font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink); border:1px solid var(--ink); padding:0.65rem 1.25rem; text-decoration:none; transition:all 0.2s;"
+                 onmouseover="this.style.background='var(--ink)';this.style.color='var(--parchment)'"
+                 onmouseout="this.style.background='transparent';this.style.color='var(--ink)'">
+                ← Volver al inicio &nbsp;·&nbsp; <em style="font-style:italic; font-family:var(--serif); text-transform:none; font-size:0.85rem; letter-spacing:0;">{{ $primerNodo->narracion->titulo }}</em>
+              </a>
+            </div>
+          @endif
+
         @endif
       @endforeach
 
