@@ -391,22 +391,29 @@
   let state    = 'idle'; // idle | playing | paused
   const STORAGE_KEY = 'tts_preferred_voice';
 
+  /* ── Helpers de voz ─────────────────────────────────────────────────────── */
+  const MALE_NAMES = /\b(álvaro|alvaro|pablo|jorge|raúl|raul|sergio|andrés|andres|miguel|carlos|diego|enrique|antonio|juan|pedro|lucas|martín|martin|alejandro|héctor|hector)\b/i;
+
+  function isMicrosoft(v) { return /microsoft/i.test(v.name); }
+  function isOnlineVoice(v){ return /online|natural/i.test(v.name) || !v.localService; }
+  function isMale(v)       { return MALE_NAMES.test(v.name); }
+
   /* ── Selección de voces ─────────────────────────────────────────────────── */
   function getVoices() {
-    const all = synth.getVoices();
-    // Filtrar español, priorizar es-ES, luego online/natural, luego el resto
-    const es = all.filter(v => v.lang.startsWith('es'));
-    es.sort((a, b) => {
-      // 1. es-ES antes que otros
-      const aES = a.lang === 'es-ES' ? 0 : 1;
-      const bES = b.lang === 'es-ES' ? 0 : 1;
-      if (aES !== bES) return aES - bES;
-      // 2. Online/Natural antes que local
-      const aOn = /online|natural/i.test(a.name) ? 0 : 1;
-      const bOn = /online|natural/i.test(b.name) ? 0 : 1;
-      return aOn - bOn;
+    const es = synth.getVoices().filter(v => v.lang.startsWith('es'));
+    // Orden: Microsoft Online es-ES > Microsoft Local es-ES > resto es-ES > es-*
+    // Google voces se excluyen (no funcionan con fiabilidad)
+    const noGoogle = es.filter(v => !/google/i.test(v.name));
+    noGoogle.sort((a, b) => {
+      const esA = a.lang === 'es-ES' ? 0 : 1, esB = b.lang === 'es-ES' ? 0 : 1;
+      if (esA !== esB) return esA - esB;
+      const msA = isMicrosoft(a) ? 0 : 1,  msB = isMicrosoft(b) ? 0 : 1;
+      if (msA !== msB) return msA - msB;
+      const onA = isOnlineVoice(a) ? 0 : 1, onB = isOnlineVoice(b) ? 0 : 1;
+      return onA - onB;
     });
-    return es;
+    // Si no hay nada sin Google, usar todo
+    return noGoogle.length > 0 ? noGoogle : es;
   }
 
   function populateVoiceSelect(voices) {
@@ -415,18 +422,17 @@
     voices.forEach(v => {
       const opt = document.createElement('option');
       opt.value = v.name;
-      // Nombre corto: quitar " Online (Natural)" y similares del final
-      const shortName = v.name
+      const short = v.name
         .replace(/\s*online\s*/i, ' ')
         .replace(/\s*\(natural\)\s*/i, '')
-        .replace(/\s*-\s*spanish\s*.*/i, '')
-        .trim();
-      const isOnline = /online|natural/i.test(v.name) || !v.localService;
-      opt.textContent = shortName + (isOnline ? ' ★' : '');
+        .replace(/\s*-\s*spanish\s*(\(.*?\))?\s*/i, '')
+        .replace(/\s{2,}/g, ' ').trim();
+      const mark = isOnlineVoice(v) ? ' ★' : '';
+      const sex  = isMale(v) ? ' ♂' : '';
+      opt.textContent = short + sex + mark;
       if (v.name === saved) opt.selected = true;
       voiceSel.appendChild(opt);
     });
-    // Mostrar selector solo si hay más de 1 voz
     if (voices.length > 1) voiceSel.style.display = 'block';
   }
 
