@@ -1,6 +1,6 @@
 @extends('layouts.literario')
 
-@section('title', 'Editar Perfil - Memorias sin orden')
+@section('title', 'Editar Perfil - ' . __('site.name'))
 
 @section('content')
 <div class="container">

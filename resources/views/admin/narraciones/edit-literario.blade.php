@@ -1,6 +1,6 @@
 @extends('layouts.literario')
 
-@section('title', 'Editar Narración - Memorias sin orden')
+@section('title', 'Editar Narración - ' . __('site.name'))
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.tiny.cloud/7/tinymce/7/tinymce.min.css" />

@@ -12,7 +12,7 @@
     {{-- Cabecera --}}
     <div style="background:#1a1a1a; padding:1.5rem 2rem;">
       <p style="font-family:'Courier New', monospace; font-size:0.65rem; letter-spacing:0.3em; text-transform:uppercase; color:#a09080; margin:0 0 0.4rem;">
-        Memorias sin orden
+        {{ __('site.name') }}
       </p>
       <p style="font-family:'Courier New', monospace; font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:#6b6055; margin:0;">
         Nueva publicación
@@ -50,7 +50,7 @@
     {{-- Pie --}}
     <div style="padding:1.25rem 2rem; background:#faf8f5;">
       <p style="font-family:'Courier New', monospace; font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; color:#a09080; margin:0; line-height:2;">
-        Memorias sin orden · <a href="{{ url('/') }}" style="color:#a09080;">h.artacho.org</a><br>
+        {{ __('site.name') }} · <a href="{{ url('/') }}" style="color:#a09080;">{{ parse_url(url('/'), PHP_URL_HOST) }}</a><br>
         Recibes este email porque eres suscriptor/a.<br>
         <a href="{{ url('/suscripcion/baja/') }}" style="color:#a09080; text-decoration:underline;">Cancelar suscripción</a>
       </p>

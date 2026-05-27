@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Memorias sin orden - Un espacio para narraciones personales">
+    <meta name="description" content="{{ __('site.name') }} — {{ __('site.description') }}">
     @if(request()->is('login') || request()->is('register') || request()->is('password*'))
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
         <meta http-equiv="Pragma" content="no-cache">
         <meta http-equiv="Expires" content="0">
     @endif
-    <title>@yield('title', 'Memorias sin orden')</title>
+    <title>@yield('title', __('site.name'))</title>
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Custom Styles -->
@@ -495,10 +495,10 @@
 
 <header>
   <div class="header-inner">
-    <div class="header-label">Edición digital</div>
-    <h1 class="site-title">Memorias <em>sin</em> orden</h1>
+    <div class="header-label">{{ __('site.label') }}</div>
+    <h1 class="site-title">{{ __('site.name') }}</h1>
     <div class="header-rule"></div>
-    <div class="header-sub">Palabras que perduran</div>
+    <div class="header-sub">{{ __('site.tagline') }}</div>
     <p class="text-gray-600 mt-2"> </p>
   </div>
 </header>
@@ -582,8 +582,8 @@
 @yield('content')
 
 <footer>
-  <div class="footer-title">Memorias sin orden</div>
-  <p>Colección literaria digital · Todos los derechos reservados</p>
+  <div class="footer-title">{{ __('site.name') }}</div>
+  <p>{{ __('site.subtitle') }} · Todos los derechos reservados</p>
   <p style="margin-top:0.75rem;">
     <a href="{{ route('releases') }}"
        style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.2em; color:var(--ink-muted); text-decoration:none; opacity:0.6; transition:opacity 0.2s;"

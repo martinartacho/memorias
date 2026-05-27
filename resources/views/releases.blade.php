@@ -1,6 +1,6 @@
 @extends('layouts.literario')
 
-@section('title', 'Novedades · Memorias sin orden')
+@section('title', 'Novedades · ' . __('site.name'))
 
 @section('content')
 <div class="container">
@@ -13,7 +13,7 @@
         Novedades
       </h1>
       <p style="font-family:var(--body); color:var(--ink-soft); font-size:0.95rem; line-height:1.75;">
-        Aquí encontrarás un registro de todo lo que va mejorando en Memorias sin orden,
+        Aquí encontrarás un registro de todo lo que va mejorando en {{ __('site.name') }},
         explicado sin tecnicismos.
       </p>
     </div>
@@ -32,7 +32,7 @@
       <div style="border-left:2px solid var(--parchment-dark); padding-left:1.5rem;">
 
         <p style="font-family:var(--body); color:var(--ink-soft); font-size:0.95rem; line-height:1.8; margin-bottom:1.5rem;">
-          Primera versión pública de <em>Memorias sin orden</em>. El proyecto nace como un espacio
+          Primera versión pública de <em>{{ __('site.name') }}</em>. El proyecto nace como un espacio
           personal para publicar y compartir narraciones, con especial cuidado en la experiencia
           de lectura y en el control de quién puede acceder a cada texto.
         </p>

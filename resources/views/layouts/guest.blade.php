@@ -22,7 +22,7 @@
         <p class="text-stone-600">{{ __('Recibirás un enlace para restablecer tu contraseña') }}</p>
       @else
         <h2 class="text-3xl font-serif font-bold text-stone-900 mb-4">{{ __('Acceso') }}</h2>
-        <p class="text-stone-600">{{ __('Gestiona tu cuenta de Memorias sin orden') }}</p>
+        <p class="text-stone-600">{{ __('Gestiona tu cuenta de') . ' ' . __('site.name') }}</p>
       @endif
     </div>
 

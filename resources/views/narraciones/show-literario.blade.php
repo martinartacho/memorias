@@ -1,6 +1,6 @@
 @extends('layouts.literario')
 
-@section('title', $narracion->titulo . ' · Memorias sin orden')
+@section('title', $narracion->titulo . ' · ' . __('site.name'))
 
 @push('styles')
 <style>

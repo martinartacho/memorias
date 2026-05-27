@@ -1,5 +1,5 @@
 @extends('layouts.literario')
-@section('title', 'Líneas argumentales · Memorias sin orden')
+@section('title', 'Líneas argumentales · ' . __('site.name'))
 
 @section('content')
 <div class="container">

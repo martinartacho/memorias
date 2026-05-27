@@ -1,6 +1,6 @@
 @extends('layouts.literario')
 
-@section('title', 'Enlace Enviado - Memorias sin orden')
+@section('title', 'Enlace Enviado - ' . __('site.name'))
 
 @section('content')
 <main class="container">
