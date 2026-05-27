@@ -275,7 +275,7 @@
 
       {{-- Línea de fecha + permiso --}}
       <div class="featured-author" style="display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap;">
-        <span>Publicado · {{ $narracion->fecha_publicacion->format('F Y') }}</span>
+        <span>Publicado · {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</span>
 
         @if($narracion->estado === 'promocion')
           <span style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold); padding:0.15rem 0.5rem;">
@@ -534,7 +534,7 @@
           @endif
         </div>
         <div class="card-title">{{ $story->titulo }}</div>
-        <div class="card-author">{{ $story->fecha_publicacion->format('F Y') }}</div>
+        <div class="card-author">{{ $story->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</div>
         <p class="card-excerpt">{{ Str::limit(strip_tags($story->contenido), $esPromo ? 100 : 120) }}</p>
       </div>
     @endforeach

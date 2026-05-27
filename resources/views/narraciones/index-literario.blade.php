@@ -15,7 +15,7 @@
       </div>
       <div class="featured-divider"></div>
       <div class="featured-text">
-        <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->format('F Y') }}</div>
+        <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</div>
         <h2>{{ Str::limit(strip_tags($featured->titulo), 60) }}</h2>
         <p class="dropcap">{{ Str::limit(strip_tags($featured->contenido), 280) }}</p>
         <a href="{{ route('narraciones.show', $featured->slug) }}" class="read-more">Leer narración →</a>
@@ -80,12 +80,16 @@
           </div>
 
           <div class="card-title">{{ $narracion->titulo }}</div>
-          <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>
+          <div class="card-author">
+            {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}
+          </div>
 
-          {{-- Excerpt: 100 chars para promocion, 120 normal --}}
-          <p class="card-excerpt">
-            {{ Str::limit(strip_tags($narracion->contenido), $esPromo ? 100 : 120) }}
-          </p>
+          {{-- Excerpt: oculto para fechas futuras; 100 chars promocion, 120 normal --}}
+          @if(!$esFutura)
+            <p class="card-excerpt">
+              {{ Str::limit(strip_tags($narracion->contenido), $esPromo ? 100 : 120) }}
+            </p>
+          @endif
 
           {{-- Etiqueta inferior según estado y rol --}}
           @if($esFutura)
