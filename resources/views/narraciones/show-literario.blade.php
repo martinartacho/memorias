@@ -342,21 +342,13 @@
 
       @elseif($narracion->estado === 'promocion')
 
-        {{-- MODO PROMOCION: solo primer párrafo / 100 chars --}}
-        @php
-          $promo_texto = Str::limit(strip_tags($narracion->contenido), 100);
-        @endphp
-        <p style="font-size:1rem; line-height:1.8; color:var(--ink-soft); margin-bottom:1.5rem; position:relative;">
-          {{ $promo_texto }}…
-          <span style="display:block; height:3rem; background:linear-gradient(to bottom, transparent, var(--parchment)); position:absolute; bottom:-1.5rem; left:0; right:0;"></span>
-        </p>
-
-        <div style="border:1px solid var(--parchment-dark); background:#fff; padding:1.5rem 2rem; margin-top:2rem; text-align:center;">
+        {{-- MODO PROMOCION: solo título + CTA, sin contenido --}}
+        <div style="border:1px solid var(--parchment-dark); background:#fff; padding:1.5rem 2rem; margin-top:1rem; text-align:center;">
           <div style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); margin-bottom:0.75rem;">
-            <i class="bi bi-eye"></i> Vista previa · Texto completo para suscriptores
+            <i class="bi bi-clock-fill"></i> Próximamente · Texto completo disponible en breve
           </div>
           <p style="font-size:0.9rem; color:var(--ink-muted); margin-bottom:1.25rem;">
-            Suscríbete gratis para leer «{{ $narracion->titulo }}» al completo.
+            Suscríbete gratis para leer «{{ $narracion->titulo }}» en cuanto se publique y recibir un aviso.
           </p>
           <a href="{{ route('suscripcion.form', ['slug' => $narracion->slug]) }}"
              style="display:inline-block; background:var(--accent); color:var(--parchment); font-family:var(--sans); font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; padding:0.75rem 1.75rem; text-decoration:none; transition:background 0.2s;"

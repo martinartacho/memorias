@@ -45,7 +45,7 @@ class PublicarNarracionesProgramadas extends Command
             // Administradores
             $admins = User::where('role', 'admin')->get();
             foreach ($admins as $admin) {
-                Mail::to($admin->email)->queue($mailable);
+                Mail::to($admin->email)->send($mailable);
             }
             $this->line("  → Email a {$admins->count()} admin(s).");
 
@@ -53,7 +53,7 @@ class PublicarNarracionesProgramadas extends Command
             if ($narracion->permiso_lectura !== 'privado') {
                 $suscriptores = Subscriber::whereNotNull('verified_at')->get();
                 foreach ($suscriptores as $s) {
-                    Mail::to($s->email)->queue($mailable);
+                    Mail::to($s->email)->send($mailable);
                 }
                 $this->line("  → Email a {$suscriptores->count()} suscriptor(es).");
             }

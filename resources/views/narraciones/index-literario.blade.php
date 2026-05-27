@@ -84,10 +84,10 @@
             {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}
           </div>
 
-          {{-- Excerpt: oculto para fechas futuras; 100 chars promocion, 120 normal --}}
-          @if(!$esFutura)
+          {{-- Excerpt: solo para publicadas con fecha pasada --}}
+          @if(!$esFutura && !$esPromo)
             <p class="card-excerpt">
-              {{ Str::limit(strip_tags($narracion->contenido), $esPromo ? 100 : 120) }}
+              {{ Str::limit(strip_tags($narracion->contenido), 120) }}
             </p>
           @endif
 
