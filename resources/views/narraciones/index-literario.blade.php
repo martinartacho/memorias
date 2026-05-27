@@ -1,6 +1,6 @@
 @extends('layouts.literario')
 
-@section('title', 'Narraciones · Memorias sin orden')
+@section('title', 'Narraciones · ' . __('site.name'))
 
 @section('content')
 <main class="container">
@@ -15,7 +15,7 @@
       </div>
       <div class="featured-divider"></div>
       <div class="featured-text">
-        <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->format('F Y') }}</div>
+        <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</div>
         <h2>{{ Str::limit(strip_tags($featured->titulo), 60) }}</h2>
         <p class="dropcap">{{ Str::limit(strip_tags($featured->contenido), 280) }}</p>
         <a href="{{ route('narraciones.show', $featured->slug) }}" class="read-more">Leer narración →</a>
@@ -34,10 +34,14 @@
     <div class="stories-grid">
       @foreach($narraciones as $key => $narracion)
 
-        @php $esPromo = $narracion->estado === 'promocion'; @endphp
+        @php
+          $esPromo  = $narracion->estado === 'promocion';
+          $esFutura = $narracion->fecha_publicacion->isFuture();
+        @endphp
 
         <div class="story-card {{ $esPromo ? 'story-card--promo' : '' }}"
-             onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'">
+             onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'"
+             style="{{ $esFutura ? 'opacity:0.78;' : '' }}">
 
           <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
 
@@ -64,8 +68,8 @@
               </span>
             @endif
 
-            {{-- Fecha futura (solo admin la ve) --}}
-            @if($esAdmin && $narracion->fecha_publicacion->isFuture())
+            {{-- Fecha futura --}}
+            @if($esFutura)
               <span title="Publicación programada" style="margin-left:0.3rem; color:var(--gold);">
                 <i class="bi bi-clock-fill"></i>
               </span>
@@ -76,15 +80,23 @@
           </div>
 
           <div class="card-title">{{ $narracion->titulo }}</div>
-          <div class="card-author">{{ $narracion->fecha_publicacion->format('F Y') }}</div>
+          <div class="card-author">
+            {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}
+          </div>
 
-          {{-- Excerpt: 100 chars para promocion, 120 normal --}}
-          <p class="card-excerpt">
-            {{ Str::limit(strip_tags($narracion->contenido), $esPromo ? 100 : 120) }}
-          </p>
+          {{-- Excerpt: solo para publicadas con fecha pasada --}}
+          @if(!$esFutura && !$esPromo)
+            <p class="card-excerpt">
+              {{ Str::limit(strip_tags($narracion->contenido), 120) }}
+            </p>
+          @endif
 
           {{-- Etiqueta inferior según estado y rol --}}
-          @if($esPromo)
+          @if($esFutura)
+            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold);">
+              <i class="bi bi-clock-fill"></i> Disponible el {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F') }}
+            </div>
+          @elseif($esPromo)
             <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold);">
               <i class="bi bi-eye"></i> Solo vista previa
             </div>

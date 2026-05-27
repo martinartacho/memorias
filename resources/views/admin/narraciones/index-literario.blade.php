@@ -1,5 +1,5 @@
 @extends('layouts.literario')
-@section('title', 'Narraciones · Admin · Memorias sin orden')
+@section('title', 'Narraciones · Admin · ' . __('site.name'))
 
 @push('styles')
 <style>
