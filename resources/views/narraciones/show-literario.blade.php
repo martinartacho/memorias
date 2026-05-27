@@ -318,7 +318,29 @@
       @endphp
 
       {{-- Contenido: completo o truncado según estado --}}
-      @if($narracion->estado === 'promocion')
+      @if($esFutura ?? false)
+
+        {{-- FECHA FUTURA: próximamente --}}
+        <div style="border:1px solid var(--parchment-dark); background:var(--parchment); padding:2rem; margin-top:1rem; text-align:center;">
+          <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--gold); margin-bottom:0.75rem;">
+            <i class="bi bi-clock-fill"></i> &nbsp;Publicación programada
+          </div>
+          <p style="font-family:var(--body); font-size:1.05rem; color:var(--ink-soft); margin-bottom:0.5rem; line-height:1.7;">
+            Esta narración estará disponible el<br>
+            <strong style="font-size:1.15rem; color:var(--ink);">{{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</strong>
+          </p>
+          @if(!($esSubscriptor ?? false) && !($esAdmin ?? false))
+            <p style="font-family:var(--sans); font-size:0.72rem; color:var(--ink-muted); margin-top:1rem;">
+              Suscríbete para recibir un aviso cuando esté disponible.
+            </p>
+            <a href="{{ route('suscripcion.form') }}"
+               style="display:inline-block; margin-top:0.75rem; background:var(--accent); color:var(--parchment); font-family:var(--sans); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; padding:0.65rem 1.5rem; text-decoration:none;">
+              Suscribirme gratis →
+            </a>
+          @endif
+        </div>
+
+      @elseif($narracion->estado === 'promocion')
 
         {{-- MODO PROMOCION: solo primer párrafo / 100 chars --}}
         @php
@@ -368,26 +390,65 @@
             </div>
 
             @if($nodo->linea->esLineal())
-              @php $siguiente = $nodo->conexionesSalientes->first()->hasta; @endphp
-              @if($siguiente?->narracion)
-                <a href="{{ route('narraciones.show', $siguiente->narracion->slug) }}"
+              @php
+                $siguiente    = $nodo->conexionesSalientes->first()->hasta;
+                $sigNar       = $siguiente?->narracion;
+                $hoyStr       = now()->toDateString();
+                // Accesible = publicado/promocion Y fecha no futura
+                $sigAccesible = $sigNar
+                    && in_array($sigNar->estado, ['publicado', 'promocion'])
+                    && $sigNar->fecha_publicacion->toDateString() <= $hoyStr;
+                $sigFutura    = $sigNar
+                    && in_array($sigNar->estado, ['publicado', 'promocion'])
+                    && $sigNar->fecha_publicacion->toDateString() > $hoyStr;
+              @endphp
+
+              @if($sigAccesible)
+                {{-- Siguiente disponible: enlace normal --}}
+                <a href="{{ route('narraciones.show', $sigNar->slug) }}"
                    style="display:inline-flex; align-items:center; gap:0.5rem; font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--parchment); background:var(--ink); padding:0.65rem 1.25rem; text-decoration:none; transition:background 0.2s;"
                    onmouseover="this.style.background='var(--accent)'" onmouseout="this.style.background='var(--ink)'">
-                  La historia continúa &nbsp;→&nbsp; <em style="font-style:italic; font-family:var(--serif); text-transform:none; font-size:0.85rem; letter-spacing:0;">{{ $siguiente->narracion->titulo }}</em>
+                  La historia continúa &nbsp;→&nbsp; <em style="font-style:italic; font-family:var(--serif); text-transform:none; font-size:0.85rem; letter-spacing:0;">{{ $sigNar->titulo }}</em>
                 </a>
+
+              @elseif($sigFutura)
+                {{-- Siguiente existe pero fecha futura: teaser --}}
+                <div style="display:inline-flex; align-items:center; gap:0.5rem; font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold); padding:0.65rem 1.25rem; opacity:0.8;">
+                  <i class="bi bi-clock"></i> Próxima entrega &nbsp;·&nbsp;
+                  <em style="font-style:italic; font-family:var(--serif); text-transform:none; font-size:0.85rem; letter-spacing:0;">
+                    {{ $sigNar->fecha_publicacion->translatedFormat('j \d\e F') }}
+                  </em>
+                </div>
+
+              @elseif($sigNar)
+                {{-- Siguiente es borrador (no publicado aún): teaser genérico --}}
+                <div style="display:inline-flex; align-items:center; gap:0.5rem; font-family:var(--sans); font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted); border:1px solid var(--parchment-dark); padding:0.65rem 1.25rem; opacity:0.65;">
+                  <i class="bi bi-three-dots"></i> Próxima entrega en preparación
+                </div>
               @endif
             @else
               <div style="font-family:var(--body); font-size:0.9rem; color:var(--ink-soft); margin-bottom:0.75rem;">¿Cómo sigue la historia?</div>
               <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
                 @foreach($nodo->conexionesSalientes as $cx)
-                  @if($cx->hasta?->narracion)
-                    <a href="{{ route('narraciones.show', $cx->hasta->narracion->slug) }}"
+                  @php
+                    $cxNar = $cx->hasta?->narracion;
+                    $cxAccesible = $cxNar
+                        && in_array($cxNar->estado, ['publicado','promocion'])
+                        && $cxNar->fecha_publicacion->toDateString() <= $hoyStr;
+                  @endphp
+                  @if($cxAccesible)
+                    <a href="{{ route('narraciones.show', $cxNar->slug) }}"
                        style="font-family:var(--sans); font-size:0.7rem; border:1px solid var(--ink); color:var(--ink); padding:0.4rem 0.9rem; text-decoration:none; transition:all 0.2s;"
                        onmouseover="this.style.background='var(--ink)';this.style.color='var(--parchment)'"
                        onmouseout="this.style.background='transparent';this.style.color='var(--ink)'"
-                       title="{{ $cx->hasta->narracion->titulo }}">
-                      {{ $cx->etiqueta ?: $cx->hasta->narracion->titulo }}
+                       title="{{ $cxNar->titulo }}">
+                      {{ $cx->etiqueta ?: $cxNar->titulo }}
                     </a>
+                  @elseif($cxNar)
+                    <span style="font-family:var(--sans); font-size:0.7rem; border:1px solid var(--parchment-dark); color:var(--ink-muted); padding:0.4rem 0.9rem; opacity:0.6;"
+                          title="Próximamente">
+                      <i class="bi bi-three-dots"></i> {{ $cx->etiqueta ?: $cxNar->titulo }}
+                    </span>
                   @endif
                 @endforeach
               </div>

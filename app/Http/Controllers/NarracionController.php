@@ -52,12 +52,9 @@ class NarracionController extends Controller
         $hoy           = now()->toDateString();
 
         // Base: publicado + promocion, ordenado por fecha
+        // Las fechas futuras se muestran a todos como teaser (el contenido
+        // queda bloqueado hasta la fecha; ver show())
         $query = Narracion::visible()->orderByFecha();
-
-        // Fechas futuras: solo las ve el admin (para preview)
-        if (!$esAdmin) {
-            $query->where('fecha_publicacion', '<=', $hoy);
-        }
 
         // Filtro de permiso_lectura según rol
         if ($esAdmin) {
@@ -106,10 +103,12 @@ class NarracionController extends Controller
         $esAdmin = $this->esAdmin();
 
         $esSubscriptor = $this->esSubscritorVerificado($request);
+        $hoy           = now()->toDateString();
+        $esFutura      = $narracion->fecha_publicacion->toDateString() > $hoy;
 
         // Admin ve todo sin restricciones
         if ($esAdmin) {
-            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor'));
+            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
         }
 
         // Privadas: nunca accesibles públicamente
@@ -127,10 +126,16 @@ class NarracionController extends Controller
             return redirect()->route('suscripcion.form', ['slug' => $slug]);
         }
 
+        // Narración con fecha futura: mostrar página de "próximamente"
+        // (no contabilizar lectura)
+        if ($esFutura) {
+            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+        }
+
         // Promocion: acceso permitido pero contenido limitado en la vista
         $narracion->increment('count_read');
 
-        return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor'));
+        return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
