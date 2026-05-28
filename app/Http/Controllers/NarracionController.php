@@ -50,6 +50,7 @@ class NarracionController extends Controller
         $esSubscriptor = $this->esSubscritorVerificado($request);
         $esAdmin       = $this->esAdmin();
         $hoy           = now()->toDateString();
+        $q             = trim($request->input('q', ''));
 
         // Base: publicado + promocion, ordenado por fecha
         // Las fechas futuras se muestran a todos como teaser (el contenido
@@ -65,19 +66,27 @@ class NarracionController extends Controller
             $query->where('permiso_lectura', 'publico');
         }
 
-        // Narración destacada: mayor orden, publicada (no promocion), fecha pasada
-        $featured = Narracion::publicado()
-            ->where('permiso_lectura', 'publico')
-            ->where('fecha_publicacion', '<=', $hoy)
-            ->orderBy('orden', 'desc')
-            ->orderByFecha()
-            ->first();
+        // Búsqueda por título
+        if ($q !== '') {
+            $query->where('titulo', 'like', '%' . $q . '%');
+        }
+
+        // Narración destacada: solo cuando no hay búsqueda activa
+        $featured = null;
+        if ($q === '') {
+            $featured = Narracion::publicado()
+                ->where('permiso_lectura', 'publico')
+                ->where('fecha_publicacion', '<=', $hoy)
+                ->orderBy('orden', 'desc')
+                ->orderByFecha()
+                ->first();
+        }
 
         $narraciones = $query->paginate(6)->withQueryString();
 
         // Títulos ocultos para visitantes anónimos (teaser de seguidores)
         $ocultas = collect();
-        if (!$esAdmin && !$esSubscriptor) {
+        if (!$esAdmin && !$esSubscriptor && $q === '') {
             $ocultas = Narracion::publicado()
                 ->where('permiso_lectura', 'seguidores')
                 ->where('fecha_publicacion', '<=', $hoy)
@@ -86,7 +95,7 @@ class NarracionController extends Controller
         }
 
         return view('narraciones.index-literario',
-            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas'));
+            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas', 'q'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
