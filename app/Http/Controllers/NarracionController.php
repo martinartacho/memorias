@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Narracion;
+use App\Models\NarracionComment;
 use App\Models\NarracionReaction;
 use App\Models\Subscriber;
 use Illuminate\Http\Request;
@@ -118,9 +119,25 @@ class NarracionController extends Controller
         $hoy           = now()->toDateString();
         $esFutura      = $narracion->fecha_publicacion->toDateString() > $hoy;
 
+        // Suscriptor activo (para comentarios)
+        $subscriber = $esSubscriptor
+            ? Subscriber::where('token', $request->cookie('subscriber_token'))->first()
+            : null;
+
+        // Comentarios públicos (solo narraciones no futuras)
+        $comentarios  = $esFutura ? collect() : $narracion->comments()->with('subscriber')->get();
+
+        // Comentario propio del suscriptor actual (null si no ha comentado)
+        $miComentario = ($subscriber && !$esFutura)
+            ? NarracionComment::where('narracion_id', $narracion->id)
+                ->where('subscriber_id', $subscriber->id)
+                ->first()
+            : null;
+
         // Admin ve todo sin restricciones
         if ($esAdmin) {
-            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+            return view('narraciones.show-literario',
+                compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'));
         }
 
         // Privadas: nunca accesibles públicamente
@@ -141,13 +158,15 @@ class NarracionController extends Controller
         // Narración con fecha futura: mostrar página de "próximamente"
         // (no contabilizar lectura)
         if ($esFutura) {
-            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+            return view('narraciones.show-literario',
+                compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'));
         }
 
         // Promocion: acceso permitido pero contenido limitado en la vista
         $narracion->increment('count_read');
 
-        return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+        return view('narraciones.show-literario',
+            compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -291,6 +310,107 @@ class NarracionController extends Controller
             'likes'    => $narracion->count_feedback,
             'dislikes' => $narracion->count_dislikes,
         ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Comentarios de suscriptores
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function comment(Request $request, string $slug)
+    {
+        // Solo suscriptores verificados
+        if (!$this->esSubscritorVerificado($request) && !$this->esAdmin()) {
+            return redirect()->route('suscripcion.form', ['slug' => $slug])
+                ->with('error', 'Debes ser suscriptor verificado para comentar.');
+        }
+
+        $narracion = Narracion::where('slug', $slug)
+            ->visible()
+            ->where('fecha_publicacion', '<=', now()->toDateString())
+            ->firstOrFail();
+
+        $request->validate([
+            'contenido' => 'required|string|min:3|max:1000',
+        ], [
+            'contenido.required' => 'El comentario no puede estar vacío.',
+            'contenido.min'      => 'El comentario debe tener al menos 3 caracteres.',
+            'contenido.max'      => 'El comentario no puede superar los 1000 caracteres.',
+        ]);
+
+        // Obtener el subscriber
+        $subscriber = Subscriber::where('token', $request->cookie('subscriber_token'))->first();
+
+        if (!$subscriber) {
+            return back()->with('error', 'No se ha podido identificar tu cuenta de suscriptor.');
+        }
+
+        // Un solo comentario por suscriptor y narración
+        $yaExiste = NarracionComment::where('narracion_id', $narracion->id)
+            ->where('subscriber_id', $subscriber->id)
+            ->exists();
+
+        if ($yaExiste) {
+            return back()->with('error', 'Ya has dejado un comentario en esta narración. Puedes modificarlo o eliminarlo.');
+        }
+
+        NarracionComment::create([
+            'narracion_id'  => $narracion->id,
+            'subscriber_id' => $subscriber->id,
+            'contenido'     => $request->contenido,
+        ]);
+
+        return redirect()
+            ->route('narraciones.show', $slug)
+            ->withFragment('comentarios')
+            ->with('success', 'Comentario publicado.');
+    }
+
+    public function updateComment(Request $request, string $slug, int $commentId)
+    {
+        $comment = NarracionComment::findOrFail($commentId);
+
+        // Solo el propio suscriptor o el admin pueden editar
+        $subscriber = Subscriber::where('token', $request->cookie('subscriber_token'))->first();
+        $esPropio   = $subscriber && $comment->subscriber_id === $subscriber->id;
+
+        if (!$this->esAdmin() && !$esPropio) {
+            abort(403);
+        }
+
+        $request->validate([
+            'contenido' => 'required|string|min:3|max:1000',
+        ], [
+            'contenido.required' => 'El comentario no puede estar vacío.',
+            'contenido.min'      => 'El comentario debe tener al menos 3 caracteres.',
+            'contenido.max'      => 'El comentario no puede superar los 1000 caracteres.',
+        ]);
+
+        $comment->update(['contenido' => $request->contenido]);
+
+        return redirect()
+            ->route('narraciones.show', $slug)
+            ->withFragment('comentarios')
+            ->with('success', 'Comentario actualizado.');
+    }
+
+    public function deleteComment(Request $request, string $slug, int $commentId)
+    {
+        $comment = NarracionComment::findOrFail($commentId);
+
+        // Admin o el propio suscriptor pueden eliminar
+        $subscriber = Subscriber::where('token', $request->cookie('subscriber_token'))->first();
+        $esPropio   = $subscriber && $comment->subscriber_id === $subscriber->id;
+
+        if (!$this->esAdmin() && !$esPropio) {
+            abort(403);
+        }
+
+        $comment->delete();
+
+        return redirect()
+            ->route('narraciones.show', $slug)
+            ->withFragment('comentarios')
+            ->with('success', 'Comentario eliminado.');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

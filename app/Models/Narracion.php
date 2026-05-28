@@ -69,6 +69,12 @@ class Narracion extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** Comentarios de suscriptores */
+    public function comments()
+    {
+        return $this->hasMany(NarracionComment::class)->latest();
+    }
+
     /** Nodos de líneas argumentales en que participa esta narración */
     public function nodosLinea()
     {
