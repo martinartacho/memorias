@@ -16,6 +16,7 @@ Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('nar
 Route::get('/narracion/{slug}/descargar', [NarracionController::class, 'downloadPdf'])->name('narraciones.pdf');
 Route::post('/narracion/{slug}/reaccion', [NarracionController::class, 'react'])->name('narraciones.react');
 Route::post('/narracion/{slug}/comentario', [NarracionController::class, 'comment'])->name('narraciones.comment');
+Route::put('/narracion/{slug}/comentario/{comment}', [NarracionController::class, 'updateComment'])->name('narraciones.comment.update');
 Route::delete('/narracion/{slug}/comentario/{comment}', [NarracionController::class, 'deleteComment'])->name('narraciones.comment.delete');
 Route::get('/releases', fn() => view('releases'))->name('releases');
 
