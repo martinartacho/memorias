@@ -212,12 +212,19 @@ class NarracionController extends Controller
             'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
         ]);
 
+        // Corrección automática de estado: publicado + fecha futura → promocion
+        // (evita saltarse el sistema de autopublicación y notificaciones)
+        $estado = $request->estado;
+        if ($estado === 'publicado' && now()->toDateString() < $request->fecha_publicacion) {
+            $estado = 'promocion';
+        }
+
         Narracion::create([
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'slug'              => Str::slug($request->titulo) . '-' . time(),
             'fecha_publicacion' => $request->fecha_publicacion,
-            'estado'            => $request->estado,
+            'estado'            => $estado,
             'user_id'           => auth()->id(),
             'orden'             => $request->orden ?? 0,
             'permiso_lectura'   => $request->permiso_lectura ?? 'publico',
@@ -250,11 +257,17 @@ class NarracionController extends Controller
             'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
         ]);
 
+        // Corrección automática de estado: publicado + fecha futura → promocion
+        $estado = $request->estado;
+        if ($estado === 'publicado' && now()->toDateString() < $request->fecha_publicacion) {
+            $estado = 'promocion';
+        }
+
         $narracion->update([
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'fecha_publicacion' => $request->fecha_publicacion,
-            'estado'            => $request->estado,
+            'estado'            => $estado,
             'orden'             => $request->orden ?? $narracion->orden,
             'permiso_lectura'   => $request->permiso_lectura ?? $narracion->permiso_lectura,
         ]);
