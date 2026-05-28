@@ -30,47 +30,9 @@ Auth::routes();
 
 // ─── Área de usuario autenticado ────────────────────────────────────────────
 
-Route::get('/dashboard', function (Request $request) {
-    $user = auth()->user();
-    $hoy  = now()->toDateString();
-
-    $esSubscriptor = Subscriber::tokenIsValid($request->cookie('subscriber_token'));
-
-    if ($user->isAdmin()) {
-        // ── Admin: todas las narraciones del sistema ──────────────────────────
-        $stats = [
-            'total'      => Narracion::count(),
-            'publicadas' => Narracion::where('estado', 'publicado')->count(),
-            'promocion'  => Narracion::where('estado', 'promocion')->count(),
-            'borradores' => Narracion::where('estado', 'borrador')->count(),
-            'usuarios'   => \App\Models\User::count(),
-        ];
-
-    } elseif ($user->isEditor()) {
-        // ── Editor: solo sus propias narraciones ──────────────────────────────
-        $q = fn() => Narracion::where('user_id', $user->id);
-        $stats = [
-            'total'      => $q()->count(),
-            'publicadas' => $q()->where('estado', 'publicado')->count(),
-            'promocion'  => $q()->where('estado', 'promocion')->count(),
-            'borradores' => $q()->where('estado', 'borrador')->count(),
-        ];
-
-    } else {
-        // ── Lector: narraciones accesibles según suscripción ──────────────────
-        $base = fn() => Narracion::visible()
-            ->where('fecha_publicacion', '<=', $hoy)
-            ->where('permiso_lectura', $esSubscriptor ? '!=' : '=', $esSubscriptor ? 'privado' : 'publico');
-        $stats = [
-            'total'      => $base()->count(),
-            'publicadas' => $base()->where('estado', 'publicado')->count(),
-            'promocion'  => $base()->where('estado', 'promocion')->count(),
-            'borradores' => 0,
-        ];
-    }
-
-    return view('dashboard', compact('user', 'stats', 'esSubscriptor'));
-})->middleware('auth')->name('dashboard');
+Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
 
 // Solicitud de rol de editor (lectors)
 Route::post('/dashboard/solicitar-editor', function (Request $request) {
