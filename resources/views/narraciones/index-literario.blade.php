@@ -23,11 +23,48 @@
     </div>
   @endif
 
+  {{-- ── BUSCADOR ── --}}
+  <form method="GET" action="{{ route('narraciones.index') }}"
+        style="margin:2rem 0 0; display:flex; gap:0.5rem; align-items:center;">
+    <div style="flex:1; position:relative;">
+      <i class="bi bi-search"
+         style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%);
+                color:var(--ink-muted); font-size:0.75rem; pointer-events:none;"></i>
+      <input type="text" name="q" value="{{ $q }}"
+             placeholder="Buscar por título…"
+             autocomplete="off"
+             style="width:100%; padding:0.55rem 0.85rem 0.55rem 2.2rem;
+                    font-family:var(--sans); font-size:0.72rem; letter-spacing:0.04em;
+                    border:1px solid var(--parchment-dark); background:var(--parchment);
+                    color:var(--ink); outline:none;
+                    transition:border-color 0.2s;">
+    </div>
+    <button type="submit"
+            style="padding:0.55rem 1.1rem; font-family:var(--sans); font-size:0.65rem;
+                   letter-spacing:0.15em; text-transform:uppercase;
+                   background:var(--ink); color:var(--parchment);
+                   border:none; cursor:pointer;">
+      Buscar
+    </button>
+    @if($q !== '')
+      <a href="{{ route('narraciones.index') }}"
+         style="padding:0.55rem 0.75rem; font-family:var(--sans); font-size:0.65rem;
+                letter-spacing:0.1em; color:var(--ink-muted); text-decoration:none;
+                border:1px solid var(--parchment-dark);">
+        <i class="bi bi-x-lg"></i>
+      </a>
+    @endif
+  </form>
+
   {{-- ── GRID ── --}}
   @if($narraciones->count() > 0)
 
     <div class="grid-label">
-      Todas las narraciones
+      @if($q !== '')
+        Resultados para «{{ $q }}»
+      @else
+        Todas las narraciones
+      @endif
       <span>{{ $narraciones->total() }} texto{{ $narraciones->total() !== 1 ? 's' : '' }}</span>
     </div>
 
@@ -133,10 +170,22 @@
     @endif
 
   @else
-    <div style="text-align:center; padding:5rem 0;">
-      <p style="font-family:var(--serif); font-size:1.5rem; color:var(--ink-muted);">
-        Aún no hay narraciones publicadas.
-      </p>
+    <div style="text-align:center; padding:4rem 0 5rem;">
+      @if($q !== '')
+        <p style="font-family:var(--serif); font-size:1.2rem; color:var(--ink-muted); margin-bottom:1.25rem;">
+          Sin resultados para «{{ $q }}»
+        </p>
+        <a href="{{ route('narraciones.index') }}"
+           style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.15em;
+                  text-transform:uppercase; color:var(--ink-muted); text-decoration:none;
+                  border-bottom:1px solid var(--parchment-dark); padding-bottom:0.1rem;">
+          ← Ver todas las narraciones
+        </a>
+      @else
+        <p style="font-family:var(--serif); font-size:1.5rem; color:var(--ink-muted);">
+          Aún no hay narraciones publicadas.
+        </p>
+      @endif
     </div>
   @endif
 
