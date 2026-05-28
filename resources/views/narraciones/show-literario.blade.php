@@ -361,7 +361,9 @@
       @else
 
         {{-- MODO NORMAL: contenido completo --}}
-        <div style="font-size:1.05rem; line-height:1.9; color:var(--ink-soft);">
+        <div id="narracion-content"
+             style="font-size:1.05rem; line-height:1.9; color:var(--ink-soft);
+                    {{ !$esAdmin ? 'user-select:none; -webkit-user-select:none;' : '' }}">
           {!! $narracion->contenido !!}
         </div>
 
@@ -857,5 +859,64 @@
   }
 })();
 </script>
+
+@if(!$esAdmin)
+{{-- ── Protección de contenido (no aplica a admins) ────────────────────── --}}
+<div id="copy-toast"
+     style="display:none; position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
+            z-index:500; background:var(--ink); color:var(--parchment);
+            font-family:var(--sans); font-size:0.65rem; letter-spacing:0.15em;
+            text-transform:uppercase; padding:0.65rem 1.4rem;
+            box-shadow:0 4px 16px rgba(0,0,0,0.25); white-space:nowrap;
+            transition:opacity 0.4s;">
+  <i class="bi bi-lock-fill" style="margin-right:0.4rem;"></i>
+  Contenido protegido · {{ __('site.name') }}
+</div>
+
+<script>
+(function () {
+  const content = document.getElementById('narracion-content');
+  if (!content) return;
+
+  const titulo   = {{ Js::from($narracion->titulo) }};
+  const siteName = {{ Js::from(__('site.name')) }};
+  const siteUrl  = {{ Js::from(url('/')) }};
+  const atribucion = '\n\n— «' + titulo + '» · ' + siteName + ' · ' + siteUrl;
+
+  // Toast de aviso
+  function showToast() {
+    const toast = document.getElementById('copy-toast');
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.style.display = 'none', 400);
+    }, 2500);
+  }
+
+  // 1. Bloquear menú contextual sobre el contenido
+  content.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    showToast();
+  });
+
+  // 2. Interceptar copia: reemplazar portapapeles con atribución
+  document.addEventListener('copy', e => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return;
+    // Solo actuar si la selección toca el bloque de contenido
+    if (!content.contains(sel.anchorNode) && !content.contains(sel.focusNode)) return;
+
+    const textoSeleccionado = sel.toString().trim();
+    if (!textoSeleccionado) return;
+
+    e.clipboardData.setData('text/plain', textoSeleccionado + atribucion);
+    e.preventDefault();
+    showToast();
+  });
+})();
+</script>
+@endif
 
 @endsection
