@@ -428,7 +428,7 @@
                     $cxNar = $cx->hasta?->narracion;
                     $cxAccesible = $cxNar
                         && in_array($cxNar->estado, ['publicado','promocion'])
-                        && $cxNar->fecha_publicacion->toDateString() <= $hoyStr;
+                        && $cxNar->fecha_publicacion->toDateString() <= now()->toDateString();
                   @endphp
                   @if($cxAccesible)
                     <a href="{{ route('narraciones.show', $cxNar->slug) }}"
