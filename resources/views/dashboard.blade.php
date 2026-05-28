@@ -184,6 +184,84 @@
 
   @endif
 
+  {{-- ── ACTIVITATS RECENTS (admin + editor) ── --}}
+  @if($user->isAdmin() || $user->isEditor())
+  <div style="max-width:900px; margin:0 auto 2rem;">
+    <div style="background:#fff; border:1px solid var(--parchment-dark); padding:2rem 2.5rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.5rem;">
+        <div class="section-label" style="margin-bottom:0;">Activitat recent</div>
+        @if($activitats->isEmpty())
+          <span style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">Cap activitat encara</span>
+        @else
+          <span style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">Últimes {{ $activitats->count() }}</span>
+        @endif
+      </div>
+
+      @if($activitats->isEmpty())
+        <p style="font-family:var(--body); color:var(--ink-muted); font-size:0.9rem; font-style:italic;">
+          Quan els lectors deixin comentaris o es subscriguin, ho veuràs aquí.
+        </p>
+      @else
+        <div style="display:flex; flex-direction:column; gap:0;">
+          @foreach($activitats as $act)
+            @php $esUltim = $loop->last; @endphp
+            <div style="display:flex; align-items:flex-start; gap:1rem; padding:0.9rem 0;
+                        {{ !$esUltim ? 'border-bottom:1px solid var(--parchment-dark);' : '' }}">
+
+              {{-- Icona --}}
+              <div style="flex-shrink:0; width:2rem; height:2rem; border:1px solid {{ $act['color'] }};
+                          display:flex; align-items:center; justify-content:center;
+                          color:{{ $act['color'] }}; font-size:0.85rem; margin-top:0.1rem;">
+                <i class="bi {{ $act['icono'] }}"></i>
+              </div>
+
+              {{-- Contingut --}}
+              <div style="flex:1; min-width:0;">
+                @if($act['tipus'] === 'comentari')
+                  <div style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.15em;
+                              text-transform:uppercase; color:var(--ink-muted); margin-bottom:0.2rem;">
+                    <strong style="color:var(--ink-soft);">{{ $act['alias'] }}</strong>
+                    &nbsp;·&nbsp; comentari a
+                    @if($act['url'])
+                      <a href="{{ $act['url'] }}"
+                         style="color:var(--accent); text-decoration:none;"
+                         onmouseover="this.style.textDecoration='underline'"
+                         onmouseout="this.style.textDecoration='none'">{{ Str::limit($act['narracio'], 40) }}</a>
+                    @else
+                      {{ Str::limit($act['narracio'], 40) }}
+                    @endif
+                  </div>
+                  <p style="font-family:var(--body); font-size:0.88rem; color:var(--ink);
+                            line-height:1.5; margin:0; white-space:nowrap; overflow:hidden;
+                            text-overflow:ellipsis;">
+                    "{{ $act['text'] }}"
+                  </p>
+                @else
+                  <div style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.15em;
+                              text-transform:uppercase; color:var(--ink-muted); margin-bottom:0.2rem;">
+                    Nou subscriptor
+                  </div>
+                  <p style="font-family:var(--body); font-size:0.88rem; color:var(--ink); margin:0;">
+                    {{ $act['text'] }}
+                  </p>
+                @endif
+              </div>
+
+              {{-- Data relativa --}}
+              <div style="flex-shrink:0; font-family:var(--sans); font-size:0.6rem;
+                          letter-spacing:0.1em; color:var(--ink-muted); white-space:nowrap;
+                          margin-top:0.15rem;" title="{{ $act['data']->format('d/m/Y H:i') }}">
+                {{ $act['data']->diffForHumans() }}
+              </div>
+
+            </div>
+          @endforeach
+        </div>
+      @endif
+    </div>
+  </div>
+  @endif
+
   {{-- ── SUSCRIPTORES (solo admin y editor) ── --}}
   @if($user->isAdmin() || $user->isEditor())
   @php
