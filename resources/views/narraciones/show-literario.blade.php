@@ -305,6 +305,39 @@
       {{-- Título --}}
       <h2>{{ $narracion->titulo }}</h2>
 
+      {{-- ── Compartir (bajo el título, solo publicado y no futuro) ── --}}
+      @if($narracion->estado === 'publicado' && !($esFutura ?? false))
+        @php
+          $urlCompartir  = route('narraciones.show', $narracion->slug);
+          $textoWA       = 'Os dejo esta narración: «' . $narracion->titulo . '»' . "\n" . $urlCompartir;
+        @endphp
+        <div style="display:flex; align-items:center; gap:0.65rem; margin-top:0.5rem; flex-wrap:wrap;">
+          {{-- WhatsApp --}}
+          <a href="https://wa.me/?text={{ urlencode($textoWA) }}"
+             target="_blank" rel="noopener"
+             id="share-wa-title"
+             style="display:inline-flex; align-items:center; gap:0.3rem; font-family:var(--sans);
+                    font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase;
+                    color:var(--ink-muted); border:1px solid var(--parchment-dark);
+                    padding:0.3rem 0.75rem; text-decoration:none; transition:all 0.2s;"
+             onmouseover="this.style.borderColor='#25D366';this.style.color='#25D366'"
+             onmouseout="this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+          </a>
+          {{-- Copiar enlace --}}
+          <button id="copy-link-title"
+                  onclick="compartirEnllac('{{ $urlCompartir }}', 'copy-link-title')"
+                  style="display:inline-flex; align-items:center; gap:0.3rem; font-family:var(--sans);
+                         font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase;
+                         color:var(--ink-muted); border:1px solid var(--parchment-dark);
+                         padding:0.3rem 0.75rem; background:none; cursor:pointer; transition:all 0.2s;"
+                  onmouseover="this.style.borderColor='var(--ink)';this.style.color='var(--ink)'"
+                  onmouseout="this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'">
+            <i class="bi bi-link-45deg"></i> <span id="copy-link-title-label">Copiar enlace</span>
+          </button>
+        </div>
+      @endif
+
       {{-- ── Reproductor de voz (sticky, fuera del flujo del texto) ── --}}
       @php
         // Texto limpio para la voz
@@ -575,6 +608,35 @@
           <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">
             {{ $narracion->count_read }} {{ $narracion->count_read === 1 ? 'lectura' : 'lecturas' }}
           </span>
+
+          {{-- ── Compartir (peu) ── --}}
+          @if($narracion->estado === 'publicado' && !$esFutura)
+            <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+              <a href="https://wa.me/?text={{ urlencode('Os dejo esta narración: «' . $narracion->titulo . '»' . "\n" . route('narraciones.show', $narracion->slug)) }}"
+                 target="_blank" rel="noopener"
+                 title="Compartir por WhatsApp"
+                 style="display:inline-flex; align-items:center; gap:0.25rem; font-family:var(--sans);
+                        font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase;
+                        color:var(--ink-muted); border:1px solid var(--parchment-dark);
+                        padding:0.25rem 0.6rem; text-decoration:none; transition:all 0.2s;"
+                 onmouseover="this.style.borderColor='#25D366';this.style.color='#25D366'"
+                 onmouseout="this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'">
+                <i class="bi bi-whatsapp"></i>
+              </a>
+              <button onclick="compartirEnllac('{{ route('narraciones.show', $narracion->slug) }}', 'copy-link-peu')"
+                      title="Copiar enlace"
+                      style="display:inline-flex; align-items:center; font-family:var(--sans);
+                             font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase;
+                             color:var(--ink-muted); border:1px solid var(--parchment-dark);
+                             padding:0.25rem 0.6rem; background:none; cursor:pointer; transition:all 0.2s;"
+                      id="copy-link-peu"
+                      onmouseover="this.style.borderColor='var(--ink)';this.style.color='var(--ink)'"
+                      onmouseout="this.style.borderColor='var(--parchment-dark)';this.style.color='var(--ink-muted)'">
+                <i class="bi bi-link-45deg"></i>
+              </button>
+            </div>
+          @endif
+
         </div>
       </div>
 
@@ -868,6 +930,66 @@
   </div>
 
 </main>
+
+{{-- Toast compartir --}}
+<div id="share-toast"
+     style="position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%) translateY(2rem);
+            background:var(--ink); color:var(--parchment); font-family:var(--sans);
+            font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase;
+            padding:0.65rem 1.25rem; z-index:500; opacity:0; transition:opacity 0.25s, transform 0.25s;
+            pointer-events:none; white-space:nowrap;">
+  <i class="bi bi-check-circle" style="margin-right:0.4rem;"></i> Enlace copiado
+</div>
+
+<script>
+/* ── Compartir: copiar enlace + feedback toast ───────────────────────── */
+function compartirEnllac(url, btnId) {
+  // Mòbil amb Web Share API nativa
+  if (navigator.share) {
+    navigator.share({ title: document.title, url: url }).catch(() => {});
+    return;
+  }
+
+  function mostrarFeedback() {
+    const labelEl = document.getElementById(btnId + '-label');
+    if (labelEl) {
+      const original = labelEl.textContent;
+      labelEl.textContent = '✓ Copiado';
+      setTimeout(() => { labelEl.textContent = original; }, 2000);
+    }
+    const toast = document.getElementById('share-toast');
+    if (toast) {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(2rem)';
+      }, 2200);
+    }
+  }
+
+  // Clipboard API (HTTPS o localhost segur)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(mostrarFeedback).catch(copiarFallback);
+  } else {
+    copiarFallback();
+  }
+
+  function copiarFallback() {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      mostrarFeedback();
+    } catch (e) { /* silenci */ }
+  }
+}
+</script>
 
 <script>
 (function () {
