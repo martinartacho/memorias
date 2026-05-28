@@ -352,8 +352,8 @@ class NarracionController extends Controller
 
         return redirect()
             ->route('narraciones.show', $slug)
-            ->with('success', 'Comentario publicado.')
-            ->fragment('comentarios');
+            ->withFragment('comentarios')
+            ->with('success', 'Comentario publicado.');
     }
 
     public function deleteComment(Request $request, string $slug, int $commentId)
@@ -368,8 +368,8 @@ class NarracionController extends Controller
 
         return redirect()
             ->route('narraciones.show', $slug)
-            ->with('success', 'Comentario eliminado.')
-            ->fragment('comentarios');
+            ->withFragment('comentarios')
+            ->with('success', 'Comentario eliminado.');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
