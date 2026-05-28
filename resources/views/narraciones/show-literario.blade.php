@@ -891,7 +891,10 @@
   const texto      = {{ Js::from($textoVoz) }};
   const totalChars = texto.length;
 
-  if (!synth) { document.getElementById('tts-bar').style.display = 'none'; return; }
+  // Ocultar barra TTS en dispositivos móviles (no funciona correctamente)
+  const esMobil = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+                  && window.innerWidth < 1024;
+  if (!synth || esMobil) { document.getElementById('tts-bar').style.display = 'none'; return; }
 
   let utter = null;
   let state = 'idle';
