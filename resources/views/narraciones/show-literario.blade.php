@@ -481,18 +481,65 @@
 
           {{-- Descarga PDF: solo suscriptores/admins, narración publicada y sin fecha futura --}}
           @if(($esSubscriptor || $esAdmin) && $narracion->estado === 'publicado' && !$esFutura)
-            <a href="{{ route('narraciones.pdf', $narracion->slug) }}"
-               title="La contraseña del PDF es tu correo electrónico"
+            <button onclick="document.getElementById('pdf-modal').style.display='flex'"
                style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em;
-                      text-transform:uppercase; color:var(--ink-muted); text-decoration:none;
-                      display:inline-flex; align-items:center; gap:0.4rem;
-                      border-bottom:1px solid transparent;
-                      transition:color 0.2s, border-color 0.2s;"
-               onmouseover="this.style.color='var(--ink)'; this.style.borderColor='var(--ink-muted)';"
-               onmouseout="this.style.color='var(--ink-muted)'; this.style.borderColor='transparent';">
+                      text-transform:uppercase; color:var(--ink-muted);
+                      background:none; border:none; cursor:pointer; padding:0;
+                      display:inline-flex; align-items:center; gap:0.4rem;"
+               onmouseover="this.style.color='var(--ink)';"
+               onmouseout="this.style.color='var(--ink-muted)';">
               <i class="bi bi-file-earmark-arrow-down" style="font-size:0.9rem;"></i>
               Descargar PDF
-            </a>
+            </button>
+
+            {{-- Modal contraseña PDF --}}
+            <div id="pdf-modal"
+                 style="display:none; position:fixed; inset:0; z-index:200;
+                        background:rgba(26,26,26,0.55); align-items:center; justify-content:center;"
+                 onclick="if(event.target===this) this.style.display='none'">
+              <div style="background:var(--parchment); border:1px solid var(--parchment-dark);
+                          max-width:380px; width:90%; padding:2rem 2rem 1.75rem;">
+
+                {{-- Icono + título --}}
+                <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em;
+                            text-transform:uppercase; color:var(--ink-muted); margin-bottom:1rem;">
+                  Descarga · PDF
+                </div>
+                <p style="font-family:var(--serif); font-size:1.05rem; font-weight:700;
+                          color:var(--ink); margin-bottom:0.75rem; line-height:1.4;">
+                  El documento está protegido
+                </p>
+                <p style="font-family:var(--body); font-size:0.88rem; color:var(--ink-soft);
+                          line-height:1.7; margin-bottom:0.5rem;">
+                  Cuando el lector PDF te pida contraseña, introduce tu <strong>correo electrónico</strong>.
+                </p>
+                <p style="font-family:var(--sans); font-size:0.7rem; letter-spacing:0.04em;
+                          color:var(--ink-muted); background:var(--parchment-dark);
+                          padding:0.5rem 0.75rem; margin-bottom:1.5rem;">
+                  <i class="bi bi-key" style="margin-right:0.4rem;"></i>
+                  Tu correo electrónico = contraseña
+                </p>
+
+                {{-- Botones --}}
+                <div style="display:flex; gap:0.75rem; justify-content:flex-end; align-items:center;">
+                  <button onclick="document.getElementById('pdf-modal').style.display='none'"
+                          style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.12em;
+                                 text-transform:uppercase; color:var(--ink-muted);
+                                 background:none; border:none; cursor:pointer; padding:0.5rem;">
+                    Cancelar
+                  </button>
+                  <a href="{{ route('narraciones.pdf', $narracion->slug) }}"
+                     onclick="setTimeout(()=>document.getElementById('pdf-modal').style.display='none', 400)"
+                     style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em;
+                            text-transform:uppercase; color:var(--parchment);
+                            background:var(--ink); padding:0.6rem 1.25rem;
+                            text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem;">
+                    <i class="bi bi-download"></i> Descargar
+                  </a>
+                </div>
+
+              </div>
+            </div>
           @endif
 
           <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">
