@@ -15,6 +15,8 @@ Route::get('/narraciones', [NarracionController::class, 'index'])->name('narraci
 Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('narraciones.show');
 Route::get('/narracion/{slug}/descargar', [NarracionController::class, 'downloadPdf'])->name('narraciones.pdf');
 Route::post('/narracion/{slug}/reaccion', [NarracionController::class, 'react'])->name('narraciones.react');
+Route::post('/narracion/{slug}/comentario', [NarracionController::class, 'comment'])->name('narraciones.comment');
+Route::delete('/narracion/{slug}/comentario/{comment}', [NarracionController::class, 'deleteComment'])->name('narraciones.comment.delete');
 Route::get('/releases', fn() => view('releases'))->name('releases');
 
 // ─── Suscripción por email (reemplaza el sistema de follow) ─────────────────

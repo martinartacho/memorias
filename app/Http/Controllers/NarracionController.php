@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Narracion;
+use App\Models\NarracionComment;
 use App\Models\NarracionReaction;
 use App\Models\Subscriber;
 use Illuminate\Http\Request;
@@ -118,9 +119,18 @@ class NarracionController extends Controller
         $hoy           = now()->toDateString();
         $esFutura      = $narracion->fecha_publicacion->toDateString() > $hoy;
 
+        // Suscriptor activo (para comentarios)
+        $subscriber = $esSubscriptor
+            ? Subscriber::where('token', $request->cookie('subscriber_token'))->first()
+            : null;
+
+        // Comentarios públicos (solo narraciones no futuras)
+        $comentarios = $esFutura ? collect() : $narracion->comments()->with('subscriber')->get();
+
         // Admin ve todo sin restricciones
         if ($esAdmin) {
-            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+            return view('narraciones.show-literario',
+                compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios'));
         }
 
         // Privadas: nunca accesibles públicamente
@@ -141,13 +151,15 @@ class NarracionController extends Controller
         // Narración con fecha futura: mostrar página de "próximamente"
         // (no contabilizar lectura)
         if ($esFutura) {
-            return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+            return view('narraciones.show-literario',
+                compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios'));
         }
 
         // Promocion: acceso permitido pero contenido limitado en la vista
         $narracion->increment('count_read');
 
-        return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+        return view('narraciones.show-literario',
+            compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -291,6 +303,73 @@ class NarracionController extends Controller
             'likes'    => $narracion->count_feedback,
             'dislikes' => $narracion->count_dislikes,
         ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Comentarios de suscriptores
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function comment(Request $request, string $slug)
+    {
+        // Solo suscriptores verificados
+        if (!$this->esSubscritorVerificado($request) && !$this->esAdmin()) {
+            return redirect()->route('suscripcion.form', ['slug' => $slug])
+                ->with('error', 'Debes ser suscriptor verificado para comentar.');
+        }
+
+        $narracion = Narracion::where('slug', $slug)
+            ->visible()
+            ->where('fecha_publicacion', '<=', now()->toDateString())
+            ->firstOrFail();
+
+        $request->validate([
+            'contenido' => 'required|string|min:3|max:1000',
+        ], [
+            'contenido.required' => 'El comentario no puede estar vacío.',
+            'contenido.min'      => 'El comentario debe tener al menos 3 caracteres.',
+            'contenido.max'      => 'El comentario no puede superar los 1000 caracteres.',
+        ]);
+
+        // Obtener el subscriber_id
+        if ($this->esAdmin() && !$this->esSubscritorVerificado($request)) {
+            // Admin comentando sin cookie de suscriptor: buscar por email de usuario
+            $subscriber = Subscriber::where('email', auth()->user()->email)
+                ->whereNotNull('verified_at')
+                ->first();
+        } else {
+            $subscriber = Subscriber::where('token', $request->cookie('subscriber_token'))->first();
+        }
+
+        if (!$subscriber) {
+            return back()->with('error', 'No se ha podido identificar tu cuenta de suscriptor.');
+        }
+
+        NarracionComment::create([
+            'narracion_id'  => $narracion->id,
+            'subscriber_id' => $subscriber->id,
+            'contenido'     => $request->contenido,
+        ]);
+
+        return redirect()
+            ->route('narraciones.show', $slug)
+            ->with('success', 'Comentario publicado.')
+            ->fragment('comentarios');
+    }
+
+    public function deleteComment(Request $request, string $slug, int $commentId)
+    {
+        // Solo admins pueden borrar comentarios
+        if (!$this->esAdmin()) {
+            abort(403);
+        }
+
+        $comment = NarracionComment::findOrFail($commentId);
+        $comment->delete();
+
+        return redirect()
+            ->route('narraciones.show', $slug)
+            ->with('success', 'Comentario eliminado.')
+            ->fragment('comentarios');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

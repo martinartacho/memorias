@@ -581,6 +581,155 @@
     </div>
   </div>
 
+  {{-- ── COMENTARIOS ── --}}
+  @if(!$esFutura)
+  <div id="comentarios" style="max-width:720px; margin:3rem auto 0; padding:0 1.5rem;">
+
+    {{-- Cabecera --}}
+    <div class="grid-label" style="margin-bottom:1.5rem;">
+      Comentarios
+      @if($comentarios->count() > 0)
+        <span>{{ $comentarios->count() }} {{ $comentarios->count() === 1 ? 'comentario' : 'comentarios' }}</span>
+      @endif
+    </div>
+
+    {{-- Mensajes de sesión --}}
+    @if(session('success') && str_contains(session('success'), 'omentario'))
+      <div style="font-family:var(--sans); font-size:0.72rem; letter-spacing:0.1em;
+                  background:var(--parchment-mid); border-left:3px solid var(--accent);
+                  color:var(--ink); padding:0.75rem 1rem; margin-bottom:1.5rem;">
+        {{ session('success') }}
+      </div>
+    @endif
+    @if(session('error'))
+      <div style="font-family:var(--sans); font-size:0.72rem; letter-spacing:0.1em;
+                  background:var(--parchment-mid); border-left:3px solid #c0392b;
+                  color:var(--ink); padding:0.75rem 1rem; margin-bottom:1.5rem;">
+        {{ session('error') }}
+      </div>
+    @endif
+
+    {{-- Lista de comentarios --}}
+    @if($comentarios->isEmpty())
+      <p style="font-family:var(--body); font-size:0.9rem; color:var(--ink-muted);
+                font-style:italic; margin-bottom:2rem;">
+        Sé el primero en dejar un comentario.
+      </p>
+    @else
+      <div style="display:flex; flex-direction:column; gap:1.25rem; margin-bottom:2.5rem;">
+        @foreach($comentarios as $com)
+          <div style="border:1px solid var(--parchment-dark); padding:1.1rem 1.25rem;
+                      background:var(--parchment-mid); position:relative;">
+
+            {{-- Autor + fecha --}}
+            <div style="display:flex; align-items:center; justify-content:space-between;
+                        margin-bottom:0.65rem; gap:0.5rem; flex-wrap:wrap;">
+              <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em;
+                           text-transform:uppercase; color:var(--ink-soft);">
+                <i class="bi bi-person-circle" style="margin-right:0.25rem;"></i>
+                {{ $com->alias }}
+              </span>
+              <span style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.1em;
+                           color:var(--ink-muted);">
+                {{ $com->created_at->translatedFormat('j \d\e F \d\e Y') }}
+              </span>
+            </div>
+
+            {{-- Contenido --}}
+            <p style="font-family:var(--body); font-size:0.92rem; color:var(--ink);
+                      line-height:1.7; margin:0; white-space:pre-wrap;">{{ $com->contenido }}</p>
+
+            {{-- Botón borrar (solo admin) --}}
+            @if($esAdmin)
+              <form method="POST"
+                    action="{{ route('narraciones.comment.delete', [$narracion->slug, $com->id]) }}"
+                    style="position:absolute; top:0.75rem; right:0.75rem;"
+                    onsubmit="return confirm('¿Eliminar este comentario?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                        style="background:none; border:none; cursor:pointer; color:var(--ink-muted);
+                               font-size:0.75rem; padding:0.2rem 0.4rem;"
+                        title="Eliminar comentario"
+                        onmouseover="this.style.color='#c0392b'"
+                        onmouseout="this.style.color='var(--ink-muted)'">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            @endif
+
+          </div>
+        @endforeach
+      </div>
+    @endif
+
+    {{-- Formulario de nuevo comentario --}}
+    @if($esSubscriptor || $esAdmin)
+      <form method="POST"
+            action="{{ route('narraciones.comment', $narracion->slug) }}"
+            style="border:1px solid var(--parchment-dark); padding:1.5rem; background:var(--parchment-mid);">
+        @csrf
+
+        <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em;
+                    text-transform:uppercase; color:var(--ink-muted); margin-bottom:1rem;">
+          <i class="bi bi-pencil-square" style="margin-right:0.3rem;"></i>
+          Dejar un comentario
+        </div>
+
+        <textarea name="contenido"
+                  rows="4"
+                  maxlength="1000"
+                  placeholder="Escribe tu comentario…"
+                  required
+                  style="width:100%; box-sizing:border-box; resize:vertical;
+                         font-family:var(--body); font-size:0.92rem; color:var(--ink);
+                         background:var(--parchment); border:1px solid var(--parchment-dark);
+                         padding:0.75rem; outline:none; line-height:1.6; min-height:90px;"
+                  onfocus="this.style.borderColor='var(--ink-soft)'"
+                  onblur="this.style.borderColor='var(--parchment-dark)'">{{ old('contenido') }}</textarea>
+
+        @error('contenido')
+          <p style="font-family:var(--sans); font-size:0.68rem; color:#c0392b;
+                    margin:0.4rem 0 0;">{{ $message }}</p>
+        @enderror
+
+        <div style="display:flex; justify-content:flex-end; margin-top:0.85rem;">
+          <button type="submit"
+                  style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em;
+                         text-transform:uppercase; color:var(--parchment);
+                         background:var(--ink); border:none; cursor:pointer;
+                         padding:0.65rem 1.5rem; transition:background 0.2s;"
+                  onmouseover="this.style.background='var(--accent)'"
+                  onmouseout="this.style.background='var(--ink)'">
+            Publicar comentario
+          </button>
+        </div>
+      </form>
+
+    @else
+      {{-- Visitante no suscriptor: invitación --}}
+      <div style="border:1px solid var(--parchment-dark); padding:1.25rem 1.5rem;
+                  background:var(--parchment-mid); text-align:center;">
+        <p style="font-family:var(--body); font-size:0.92rem; color:var(--ink-soft);
+                  margin:0 0 1rem;">
+          Solo los suscriptores pueden dejar comentarios.
+        </p>
+        <a href="{{ route('suscripcion.form', ['slug' => $narracion->slug]) }}"
+           style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em;
+                  text-transform:uppercase; color:var(--ink); border:1px solid var(--ink);
+                  padding:0.6rem 1.25rem; text-decoration:none; display:inline-block;
+                  transition:all 0.2s;"
+           onmouseover="this.style.background='var(--ink)';this.style.color='var(--parchment)'"
+           onmouseout="this.style.background='transparent';this.style.color='var(--ink)'">
+          <i class="bi bi-envelope-heart" style="margin-right:0.4rem;"></i>
+          Suscribirme para comentar
+        </a>
+      </div>
+    @endif
+
+  </div>
+  @endif
+
   {{-- ── OTRAS MEMORIAS ── --}}
   @php
     $hoy = now()->toDateString();

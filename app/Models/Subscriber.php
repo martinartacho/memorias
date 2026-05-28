@@ -17,6 +17,11 @@ class Subscriber extends Model
         'verified_at' => 'datetime',
     ];
 
+    public function comments()
+    {
+        return $this->hasMany(\App\Models\NarracionComment::class);
+    }
+
     public function isVerified(): bool
     {
         return $this->verified_at !== null;
