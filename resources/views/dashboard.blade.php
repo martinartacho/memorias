@@ -50,6 +50,32 @@
     @endforeach
   </div>
 
+  {{-- ── CONTADORES SUSCRIPTORES (admin y editor) ── --}}
+  @if($user->isAdmin() || $user->isEditor())
+  @php
+    $totalSubs     = $suscriptores->count();
+    $verificados   = $suscriptores->filter->isVerified()->count();
+    $pendientes    = $totalSubs - $verificados;
+  @endphp
+  <div style="max-width:900px; margin:0 auto 2rem; display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem;">
+    <div style="background:#fff; border:1px solid var(--parchment-dark); border-top:3px solid var(--accent); padding:1.5rem; text-align:center;">
+      <i class="bi bi-envelope-heart-fill" style="font-size:1.5rem; color:var(--accent);"></i>
+      <div style="font-family:var(--serif); font-size:2rem; font-weight:700; color:var(--ink); margin:0.4rem 0;">{{ $totalSubs }}</div>
+      <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted);">Suscriptores</div>
+    </div>
+    <div style="background:#fff; border:1px solid var(--parchment-dark); border-top:3px solid #16a34a; padding:1.5rem; text-align:center;">
+      <i class="bi bi-check-circle-fill" style="font-size:1.5rem; color:#16a34a;"></i>
+      <div style="font-family:var(--serif); font-size:2rem; font-weight:700; color:var(--ink); margin:0.4rem 0;">{{ $verificados }}</div>
+      <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted);">Verificados</div>
+    </div>
+    <div style="background:#fff; border:1px solid var(--parchment-dark); border-top:3px solid var(--gold); padding:1.5rem; text-align:center;">
+      <i class="bi bi-hourglass-split" style="font-size:1.5rem; color:var(--gold);"></i>
+      <div style="font-family:var(--serif); font-size:2rem; font-weight:700; color:var(--ink); margin:0.4rem 0;">{{ $pendientes }}</div>
+      <div style="font-family:var(--sans); font-size:0.6rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-muted);">Pendientes</div>
+    </div>
+  </div>
+  @endif
+
   {{-- ══════════════════════════════════════════════════════════════════════ --}}
   @if($user->isAdmin())
   {{-- ── ADMIN ── --}}
@@ -110,6 +136,71 @@
         </div>
       </div>
     </div>
+
+  {{-- ── TABLA DE SUSCRIPTORES (admin y editor) ── --}}
+  @if($user->isAdmin() || $user->isEditor())
+  <div style="max-width:900px; margin:0 auto 2rem;">
+    <div style="background:#fff; border:1px solid var(--parchment-dark); padding:2rem 2.5rem;">
+
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.75rem;">
+        <div class="section-label">Suscriptores</div>
+        @if($suscriptores->isEmpty())
+          <span style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.1em; color:var(--ink-muted);">Sin suscriptores aún</span>
+        @endif
+      </div>
+
+      @if($suscriptores->isNotEmpty())
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-family:var(--sans); font-size:0.72rem;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--parchment-dark);">
+                <th style="text-align:left; padding:0.5rem 0.75rem 0.75rem 0; letter-spacing:0.2em; text-transform:uppercase; font-size:0.6rem; color:var(--ink-muted); font-weight:600;">Email</th>
+                <th style="text-align:center; padding:0.5rem 0.75rem 0.75rem; letter-spacing:0.2em; text-transform:uppercase; font-size:0.6rem; color:var(--ink-muted); font-weight:600;">Estado</th>
+                <th style="text-align:right; padding:0.5rem 0 0.75rem 0.75rem; letter-spacing:0.2em; text-transform:uppercase; font-size:0.6rem; color:var(--ink-muted); font-weight:600;">Suscrito</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($suscriptores as $sub)
+                @php $verificado = $sub->isVerified(); @endphp
+                <tr style="border-bottom:1px solid var(--parchment-dark);">
+
+                  {{-- Email --}}
+                  <td style="padding:0.75rem 0.75rem 0.75rem 0; color:var(--ink);">
+                    {{ $sub->email }}
+                  </td>
+
+                  {{-- Estado --}}
+                  <td style="padding:0.75rem; text-align:center;">
+                    @if($verificado)
+                      <span style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase;
+                                   color:#16a34a; border:1px solid #86efac;
+                                   padding:0.15rem 0.6rem; white-space:nowrap;">
+                        <i class="bi bi-check-circle-fill"></i> Verificado
+                      </span>
+                    @else
+                      <span style="font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase;
+                                   color:var(--gold); border:1px solid var(--gold);
+                                   padding:0.15rem 0.6rem; white-space:nowrap;">
+                        <i class="bi bi-hourglass-split"></i> Pendiente
+                      </span>
+                    @endif
+                  </td>
+
+                  {{-- Fecha --}}
+                  <td style="padding:0.75rem 0 0.75rem 0.75rem; text-align:right; color:var(--ink-muted); white-space:nowrap;">
+                    {{ $sub->created_at->translatedFormat('j M Y') }}
+                  </td>
+
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      @endif
+
+    </div>
+  </div>
+  @endif
 
   {{-- ══════════════════════════════════════════════════════════════════════ --}}
   @else

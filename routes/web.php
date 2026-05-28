@@ -36,6 +36,8 @@ Route::get('/dashboard', function (Request $request) {
 
     $esSubscriptor = Subscriber::tokenIsValid($request->cookie('subscriber_token'));
 
+    $suscriptores = collect(); // solo cargados para admin y editor
+
     if ($user->isAdmin()) {
         // ── Admin: todas las narraciones del sistema ──────────────────────────
         $stats = [
@@ -45,6 +47,7 @@ Route::get('/dashboard', function (Request $request) {
             'borradores' => Narracion::where('estado', 'borrador')->count(),
             'usuarios'   => \App\Models\User::count(),
         ];
+        $suscriptores = Subscriber::orderByRaw('verified_at IS NULL ASC, created_at DESC')->get();
 
     } elseif ($user->isEditor()) {
         // ── Editor: solo sus propias narraciones ──────────────────────────────
@@ -55,6 +58,7 @@ Route::get('/dashboard', function (Request $request) {
             'promocion'  => $q()->where('estado', 'promocion')->count(),
             'borradores' => $q()->where('estado', 'borrador')->count(),
         ];
+        $suscriptores = Subscriber::orderByRaw('verified_at IS NULL ASC, created_at DESC')->get();
 
     } else {
         // ── Lector: narraciones accesibles según suscripción ──────────────────
@@ -69,7 +73,7 @@ Route::get('/dashboard', function (Request $request) {
         ];
     }
 
-    return view('dashboard', compact('user', 'stats', 'esSubscriptor'));
+    return view('dashboard', compact('user', 'stats', 'esSubscriptor', 'suscriptores'));
 })->middleware('auth')->name('dashboard');
 
 // Solicitud de rol de editor (lectors)
