@@ -307,10 +307,13 @@
 
       {{-- ── Compartir (bajo el título, solo publicado y no futuro) ── --}}
       @if($narracion->estado === 'publicado' && !($esFutura ?? false))
-        @php $urlCompartir = route('narraciones.show', $narracion->slug); @endphp
+        @php
+          $urlCompartir  = route('narraciones.show', $narracion->slug);
+          $textoWA       = 'Os dejo esta narración: «' . $narracion->titulo . '»' . "\n" . $urlCompartir;
+        @endphp
         <div style="display:flex; align-items:center; gap:0.65rem; margin-top:0.5rem; flex-wrap:wrap;">
           {{-- WhatsApp --}}
-          <a href="https://wa.me/?text={{ urlencode($narracion->titulo . "\n" . $urlCompartir) }}"
+          <a href="https://wa.me/?text={{ urlencode($textoWA) }}"
              target="_blank" rel="noopener"
              id="share-wa-title"
              style="display:inline-flex; align-items:center; gap:0.3rem; font-family:var(--sans);
@@ -609,7 +612,7 @@
           {{-- ── Compartir (peu) ── --}}
           @if($narracion->estado === 'publicado' && !$esFutura)
             <div style="display:inline-flex; align-items:center; gap:0.4rem;">
-              <a href="https://wa.me/?text={{ urlencode($narracion->titulo . "\n" . route('narraciones.show', $narracion->slug)) }}"
+              <a href="https://wa.me/?text={{ urlencode('Os dejo esta narración: «' . $narracion->titulo . '»' . "\n" . route('narraciones.show', $narracion->slug)) }}"
                  target="_blank" rel="noopener"
                  title="Compartir por WhatsApp"
                  style="display:inline-flex; align-items:center; gap:0.25rem; font-family:var(--sans);
@@ -941,39 +944,50 @@
 <script>
 /* ── Compartir: copiar enlace + feedback toast ───────────────────────── */
 function compartirEnllac(url, btnId) {
-  // Si el navegador soporta Web Share API (móvil), usarla
+  // Mòbil amb Web Share API nativa
   if (navigator.share) {
     navigator.share({ title: document.title, url: url }).catch(() => {});
     return;
   }
-  // Copiar al portapapeles
-  navigator.clipboard.writeText(url).then(function () {
-    // Feedback en el label del botón del título (si existe)
+
+  function mostrarFeedback() {
     const labelEl = document.getElementById(btnId + '-label');
     if (labelEl) {
       const original = labelEl.textContent;
       labelEl.textContent = '✓ Copiado';
       setTimeout(() => { labelEl.textContent = original; }, 2000);
     }
-    // Toast
     const toast = document.getElementById('share-toast');
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
-    setTimeout(function () {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(2rem)';
-    }, 2200);
-  }).catch(function () {
-    // Fallback per navegadors antics
-    const ta = document.createElement('textarea');
-    ta.value = url;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  });
+    if (toast) {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(2rem)';
+      }, 2200);
+    }
+  }
+
+  // Clipboard API (HTTPS o localhost segur)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(mostrarFeedback).catch(copiarFallback);
+  } else {
+    copiarFallback();
+  }
+
+  function copiarFallback() {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      mostrarFeedback();
+    } catch (e) { /* silenci */ }
+  }
 }
 </script>
 
