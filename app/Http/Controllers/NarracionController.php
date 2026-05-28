@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Narracion;
+use App\Models\NarracionReaction;
 use App\Models\Subscriber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -228,6 +229,68 @@ class NarracionController extends Controller
         return response($mpdf->Output($filename, 'S'))
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Reacciones 👍 👎
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function react(Request $request, string $slug)
+    {
+        $request->validate(['tipo' => 'required|in:like,dislike']);
+
+        $narracion = Narracion::where('slug', $slug)
+            ->where('estado', 'publicado')
+            ->where('fecha_publicacion', '<=', now()->toDateString())
+            ->firstOrFail();
+
+        // Construir identificador único del votante
+        $esAdmin       = $this->esAdmin();
+        $esSubscriptor = $this->esSubscritorVerificado($request);
+
+        if ($esAdmin || auth()->check()) {
+            $identifier = 'u:' . auth()->id();
+        } elseif ($esSubscriptor) {
+            $identifier = 's:' . $request->cookie('subscriber_token');
+        } else {
+            $identifier = 'ip:' . md5($request->ip() . $request->userAgent());
+        }
+
+        // Intentar insertar; si ya existe (unique constraint) → ya votó
+        $yaVotado = NarracionReaction::where('narracion_id', $narracion->id)
+            ->where('identifier', $identifier)
+            ->exists();
+
+        if ($yaVotado) {
+            return response()->json([
+                'ok'       => false,
+                'motivo'   => 'ya_votado',
+                'likes'    => $narracion->count_feedback,
+                'dislikes' => $narracion->count_dislikes,
+            ]);
+        }
+
+        // Registrar reacción e incrementar contador
+        NarracionReaction::create([
+            'narracion_id' => $narracion->id,
+            'identifier'   => $identifier,
+            'tipo'         => $request->tipo,
+        ]);
+
+        if ($request->tipo === 'like') {
+            $narracion->increment('count_feedback');
+        } else {
+            $narracion->increment('count_dislikes');
+        }
+
+        $narracion->refresh();
+
+        return response()->json([
+            'ok'       => true,
+            'tipo'     => $request->tipo,
+            'likes'    => $narracion->count_feedback,
+            'dislikes' => $narracion->count_dislikes,
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

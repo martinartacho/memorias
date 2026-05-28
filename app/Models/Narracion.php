@@ -20,6 +20,7 @@ class Narracion extends Model
         'orden',
         'permiso_lectura',
         'count_feedback',
+        'count_dislikes',
         'count_read',
     ];
 

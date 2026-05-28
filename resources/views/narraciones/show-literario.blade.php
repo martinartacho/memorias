@@ -544,6 +544,34 @@
             </div>
           @endif
 
+          {{-- ── Reacciones 👍 👎 (solo narraciones publicadas con fecha pasada) ── --}}
+          @if($narracion->estado === 'publicado' && !$esFutura)
+            <div style="display:inline-flex; align-items:center; gap:0.5rem;">
+              <button id="btn-like"
+                      data-slug="{{ $narracion->slug }}"
+                      data-tipo="like"
+                      title="Me ha gustado"
+                      style="background:none; border:1px solid var(--parchment-dark); cursor:pointer;
+                             padding:0.3rem 0.7rem; font-size:0.85rem; display:inline-flex;
+                             align-items:center; gap:0.3rem; color:var(--ink-muted);
+                             font-family:var(--sans); font-size:0.62rem; letter-spacing:0.05em;
+                             transition:border-color 0.2s, color 0.2s;">
+                👍 <span id="count-like">{{ $narracion->count_feedback }}</span>
+              </button>
+              <button id="btn-dislike"
+                      data-slug="{{ $narracion->slug }}"
+                      data-tipo="dislike"
+                      title="No me ha convencido"
+                      style="background:none; border:1px solid var(--parchment-dark); cursor:pointer;
+                             padding:0.3rem 0.7rem; font-size:0.85rem; display:inline-flex;
+                             align-items:center; gap:0.3rem; color:var(--ink-muted);
+                             font-family:var(--sans); font-size:0.62rem; letter-spacing:0.05em;
+                             transition:border-color 0.2s, color 0.2s;">
+                👎 <span id="count-dislike">{{ $narracion->count_dislikes }}</span>
+              </button>
+            </div>
+          @endif
+
           <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">
             {{ $narracion->count_read }} {{ $narracion->count_read === 1 ? 'lectura' : 'lecturas' }}
           </span>
@@ -859,6 +887,63 @@
   }
 })();
 </script>
+
+{{-- ── Reacciones: JS AJAX ────────────────────────────────────────────────── --}}
+@if($narracion->estado === 'publicado' && !$esFutura)
+<script>
+(function () {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+  const VOTED_KEY = 'reaccion_{{ $narracion->id }}';
+
+  const btnLike    = document.getElementById('btn-like');
+  const btnDislike = document.getElementById('btn-dislike');
+  if (!btnLike || !btnDislike) return;
+
+  // Restaurar estado visual si ya votó en esta sesión
+  const votoGuardado = localStorage.getItem(VOTED_KEY);
+  if (votoGuardado) aplicarEstadoVotado(votoGuardado);
+
+  function aplicarEstadoVotado(tipo) {
+    const btn = tipo === 'like' ? btnLike : btnDislike;
+    btn.style.borderColor = tipo === 'like' ? '#16a34a' : '#dc2626';
+    btn.style.color       = tipo === 'like' ? '#16a34a' : '#dc2626';
+    btnLike.disabled    = true;
+    btnDislike.disabled = true;
+    btnLike.style.cursor    = 'default';
+    btnDislike.style.cursor = 'default';
+  }
+
+  async function enviarReaccion(tipo) {
+    if (localStorage.getItem(VOTED_KEY)) return; // ya votó
+
+    try {
+      const res  = await fetch('{{ route('narraciones.react', $narracion->slug) }}', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+        body:    JSON.stringify({ tipo }),
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        document.getElementById('count-like').textContent    = data.likes;
+        document.getElementById('count-dislike').textContent = data.dislikes;
+        localStorage.setItem(VOTED_KEY, tipo);
+        aplicarEstadoVotado(tipo);
+      } else if (data.motivo === 'ya_votado') {
+        // El servidor rechazó el voto duplicado
+        localStorage.setItem(VOTED_KEY, tipo); // sincronizar localStorage
+        aplicarEstadoVotado(tipo);
+      }
+    } catch (e) {
+      console.error('Error enviando reacción:', e);
+    }
+  }
+
+  btnLike.addEventListener('click',    () => enviarReaccion('like'));
+  btnDislike.addEventListener('click', () => enviarReaccion('dislike'));
+})();
+</script>
+@endif
 
 @if(!$esAdmin)
 {{-- ── Protección de contenido (no aplica a admins) ────────────────────── --}}
