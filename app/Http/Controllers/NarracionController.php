@@ -6,6 +6,8 @@ use App\Models\Narracion;
 use App\Models\Subscriber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Mpdf\Mpdf;
+use Mpdf\MpdfException;
 
 class NarracionController extends Controller
 {
@@ -145,6 +147,87 @@ class NarracionController extends Controller
         $narracion->increment('count_read');
 
         return view('narraciones.show-literario', compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura'));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Descarga PDF
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function downloadPdf(Request $request, string $slug)
+    {
+        // Solo narración publicada (no borradores ni solo-promo sin fecha)
+        $narracion = Narracion::where('slug', $slug)
+            ->where('estado', 'publicado')
+            ->firstOrFail();
+
+        $esAdmin       = $this->esAdmin();
+        $esSubscriptor = $this->esSubscritorVerificado($request);
+        $hoy           = now()->toDateString();
+
+        // Narraciones con fecha futura: no disponibles aún
+        if ($narracion->fecha_publicacion->toDateString() > $hoy && !$esAdmin) {
+            abort(403, 'Esta narración aún no está disponible.');
+        }
+
+        // Acceso: solo suscriptores y admins
+        if (!$esAdmin && !$esSubscriptor) {
+            return redirect()->route('suscripcion.form', ['slug' => $slug]);
+        }
+
+        // Privadas: solo admin
+        if ($narracion->permiso_lectura === 'privado' && !$esAdmin) {
+            abort(403);
+        }
+
+        // Obtener el email del suscriptor o del admin autenticado
+        if ($esAdmin) {
+            $emailSuscriptor = auth()->user()->email;
+        } else {
+            $subscriber      = Subscriber::where('token', $request->cookie('subscriber_token'))->first();
+            $emailSuscriptor = $subscriber?->email ?? 'suscriptor';
+        }
+
+        // Renderizar la vista HTML del PDF
+        $html = view('pdf.narracion', compact('narracion', 'emailSuscriptor'))->render();
+
+        // Generar PDF con mPDF
+        $mpdf = new Mpdf([
+            'mode'          => 'utf-8',
+            'format'        => 'A4',
+            'margin_left'   => 25,
+            'margin_right'  => 25,
+            'margin_top'    => 20,
+            'margin_bottom' => 20,
+            'tempDir'       => sys_get_temp_dir(),
+        ]);
+
+        // Pie de página en cada hoja
+        $mpdf->SetHTMLFooter('
+            <table width="100%" style="font-family:\'Courier New\',monospace; font-size:6pt;
+                   letter-spacing:0.1em; text-transform:uppercase; color:#b0a898; border-top:0.5pt solid #e0d8d0;">
+              <tr>
+                <td>Documento para: <strong>' . htmlspecialchars($emailSuscriptor) . '</strong></td>
+                <td align="right">' . __('site.name') . ' &nbsp;·&nbsp; Pág. {PAGENO}/{nbpg}</td>
+              </tr>
+            </table>
+        ');
+
+        // Cifrado: contraseña de usuario = email del suscriptor
+        //          contraseña de propietario = aleatoria (impide modificar el PDF)
+        $mpdf->SetProtection(
+            ['print', 'copy'],            // permisos permitidos
+            $emailSuscriptor,             // contraseña de apertura (usuario)
+            Str::random(32)               // contraseña de propietario (solo para edición)
+        );
+
+        $mpdf->WriteHTML($html);
+
+        // Nombre de archivo limpio
+        $filename = Str::slug($narracion->titulo) . '.pdf';
+
+        return response($mpdf->Output($filename, 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

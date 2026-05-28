@@ -476,9 +476,29 @@
       {{-- Navegación inferior --}}
       <div style="margin-top:2.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; border-top:1px solid var(--parchment-dark); padding-top:1.5rem;">
         <a href="{{ route('narraciones.index') }}" class="read-more">← Volver a narraciones</a>
-        <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">
-          {{ $narracion->count_read }} {{ $narracion->count_read === 1 ? 'lectura' : 'lecturas' }}
-        </span>
+
+        <div style="display:flex; align-items:center; gap:1.5rem;">
+
+          {{-- Descarga PDF: solo suscriptores/admins, narración publicada y sin fecha futura --}}
+          @if(($esSubscriptor || $esAdmin) && $narracion->estado === 'publicado' && !$esFutura)
+            <a href="{{ route('narraciones.pdf', $narracion->slug) }}"
+               title="La contraseña del PDF es tu correo electrónico"
+               style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.15em;
+                      text-transform:uppercase; color:var(--ink-muted); text-decoration:none;
+                      display:inline-flex; align-items:center; gap:0.4rem;
+                      border-bottom:1px solid transparent;
+                      transition:color 0.2s, border-color 0.2s;"
+               onmouseover="this.style.color='var(--ink)'; this.style.borderColor='var(--ink-muted)';"
+               onmouseout="this.style.color='var(--ink-muted)'; this.style.borderColor='transparent';">
+              <i class="bi bi-file-earmark-arrow-down" style="font-size:0.9rem;"></i>
+              Descargar PDF
+            </a>
+          @endif
+
+          <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-muted);">
+            {{ $narracion->count_read }} {{ $narracion->count_read === 1 ? 'lectura' : 'lecturas' }}
+          </span>
+        </div>
       </div>
 
     </div>
