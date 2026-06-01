@@ -40,12 +40,10 @@ class PublicarNarracionesProgramadas extends Command
                 continue;
             }
 
-            $mailable = new NarracionPublicada($narracion);
-
-            // Administradores
+            // Administradores — instancia nueva por destinatario para evitar acumulación de To:
             $admins = User::where('role', 'admin')->get();
             foreach ($admins as $admin) {
-                Mail::to($admin->email)->send($mailable);
+                Mail::to($admin->email)->send(new NarracionPublicada($narracion));
             }
             $this->line("  → Email a {$admins->count()} admin(s).");
 
@@ -53,7 +51,7 @@ class PublicarNarracionesProgramadas extends Command
             if ($narracion->permiso_lectura !== 'privado') {
                 $suscriptores = Subscriber::whereNotNull('verified_at')->get();
                 foreach ($suscriptores as $s) {
-                    Mail::to($s->email)->send($mailable);
+                    Mail::to($s->email)->send(new NarracionPublicada($narracion));
                 }
                 $this->line("  → Email a {$suscriptores->count()} suscriptor(es).");
             }
