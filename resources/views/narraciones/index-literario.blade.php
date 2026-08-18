@@ -39,6 +39,15 @@
                     color:var(--ink); outline:none;
                     transition:border-color 0.2s;">
     </div>
+    <select name="orden" onchange="this.form.submit()"
+            style="padding:0.55rem 0.7rem; font-family:var(--sans); font-size:0.65rem;
+                   letter-spacing:0.05em; border:1px solid var(--parchment-dark);
+                   background:var(--parchment); color:var(--ink); cursor:pointer;">
+      <option value="fecha_desc" @selected($orden === 'fecha_desc')>Más reciente</option>
+      <option value="fecha_asc"  @selected($orden === 'fecha_asc')>Más antigua</option>
+      <option value="titulo_asc" @selected($orden === 'titulo_asc')>Título A–Z</option>
+      <option value="titulo_desc"@selected($orden === 'titulo_desc')>Título Z–A</option>
+    </select>
     <button type="submit"
             style="padding:0.55rem 1.1rem; font-family:var(--sans); font-size:0.65rem;
                    letter-spacing:0.15em; text-transform:uppercase;
@@ -46,7 +55,7 @@
                    border:none; cursor:pointer;">
       Buscar
     </button>
-    @if($q !== '')
+    @if($q !== '' || $orden !== 'fecha_desc')
       <a href="{{ route('narraciones.index') }}"
          style="padding:0.55rem 0.75rem; font-family:var(--sans); font-size:0.65rem;
                 letter-spacing:0.1em; color:var(--ink-muted); text-decoration:none;
@@ -68,7 +77,7 @@
       <span>{{ $narraciones->total() }} texto{{ $narraciones->total() !== 1 ? 's' : '' }}</span>
     </div>
 
-    <div class="stories-grid">
+    <div class="stories-list">
       @foreach($narraciones as $key => $narracion)
 
         @php
@@ -76,78 +85,32 @@
           $esFutura = $narracion->fecha_publicacion->isFuture();
         @endphp
 
-        <div class="story-card {{ $esPromo ? 'story-card--promo' : '' }}"
-             onclick="window.location.href='{{ route('narraciones.show', $narracion->slug) }}'"
-             style="{{ $esFutura ? 'opacity:0.78;' : '' }}">
+        <a href="{{ route('narraciones.show', $narracion->slug) }}"
+           class="story-row"
+           style="{{ $esFutura ? 'opacity:0.7;' : '' }}">
 
-          <div class="card-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</div>
+          <span class="row-num">{{ str_pad($narraciones->firstItem() + $key, 2, '0', STR_PAD_LEFT) }}</span>
 
-          {{-- Badge de estado (siempre visible) --}}
-          <div class="card-tag">
+          <span class="row-title">
+            {{ $narracion->titulo }}
             @if($esPromo)
-              <span style="color:var(--gold);">Vista previa</span>
-            @else
-              Narración
+              <i class="bi bi-eye" title="Solo vista previa"></i>
             @endif
-
-            {{-- Permiso de lectura (siempre visible) --}}
             @if($narracion->permiso_lectura === 'seguidores')
-              <span title="Solo suscriptores" style="margin-left:0.5rem; color:var(--accent);">
-                <i class="bi bi-envelope-heart-fill"></i>
-              </span>
+              <i class="bi bi-envelope-heart-fill" title="Requiere suscripción"></i>
             @elseif($narracion->permiso_lectura === 'privado')
-              <span title="Privado" style="margin-left:0.5rem; color:var(--ink-muted);">
-                <i class="bi bi-lock-fill"></i>
-              </span>
-            @else
-              <span title="Público" style="margin-left:0.5rem; color:var(--ink-muted); opacity:0.4;">
-                <i class="bi bi-globe2"></i>
-              </span>
+              <i class="bi bi-lock-fill" title="Privado"></i>
             @endif
-
-            {{-- Fecha futura --}}
             @if($esFutura)
-              <span title="Publicación programada" style="margin-left:0.3rem; color:var(--gold);">
-                <i class="bi bi-clock-fill"></i>
-              </span>
+              <i class="bi bi-clock-fill" title="Disponible el {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F') }}"></i>
             @endif
+          </span>
 
-            {{-- Contador de palabras --}}
-            <span style="margin-left:0.5rem; opacity:0.55;">· {{ $narracion->palabra_count }} pal.</span>
-          </div>
-
-          <div class="card-title">{{ $narracion->titulo }}</div>
-          <div class="card-author">
+          <span class="row-date">
             {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}
-          </div>
+          </span>
 
-          {{-- Excerpt: solo para publicadas con fecha pasada --}}
-          @if(!$esFutura && !$esPromo)
-            <p class="card-excerpt">
-              {{ Str::limit(strip_tags($narracion->contenido), 120) }}
-            </p>
-          @endif
-
-          {{-- Etiqueta inferior según estado y rol --}}
-          @if($esFutura)
-            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold);">
-              <i class="bi bi-clock-fill"></i> Disponible el {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F') }}
-            </div>
-          @elseif($esPromo)
-            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold);">
-              <i class="bi bi-eye"></i> Solo vista previa
-            </div>
-          @elseif($narracion->permiso_lectura === 'privado')
-            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-muted);">
-              <i class="bi bi-lock-fill"></i> Solo visible para ti
-            </div>
-          @elseif($narracion->permiso_lectura === 'seguidores' && !$esSubscriptor && !$esAdmin)
-            <div style="margin-top:0.75rem; font-family:var(--sans); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent);">
-              <i class="bi bi-envelope-heart-fill"></i> Requiere suscripción
-            </div>
-          @endif
-
-        </div>
+        </a>
       @endforeach
     </div>
 

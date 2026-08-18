@@ -78,6 +78,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/narraciones/{slug}/edit', [NarracionController::class, 'edit'])->name('narraciones.edit');
     Route::put('/narraciones/{slug}', [NarracionController::class, 'update'])->name('narraciones.update');
     Route::delete('/narraciones/{slug}', [NarracionController::class, 'destroy'])->name('narraciones.destroy');
+    Route::patch('/narraciones/{slug}/toggle-destacada', [NarracionController::class, 'toggleDestacada'])->name('narraciones.toggleDestacada');
+    Route::post('/narraciones/bulk', [NarracionController::class, 'bulkAction'])->name('narraciones.bulk');
     Route::post('/narraciones/autosave', [NarracionController::class, 'autosave'])->name('narraciones.autosave');
     Route::post('/narraciones/upload-image', [NarracionController::class, 'uploadImage'])->name('narraciones.uploadImage');
 

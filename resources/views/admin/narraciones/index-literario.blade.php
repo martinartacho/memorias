@@ -8,7 +8,7 @@
 /* Stats */
 .an-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0.75rem;
     margin-bottom: 1.5rem;
 }
@@ -178,6 +178,40 @@
 .an-edit:hover { background: #444; border-color: #444; }
 .an-del  { background: #fff; border-color: #fca5a5; color: #dc2626; }
 .an-del:hover  { background: #fef2f2; }
+
+/* Selección múltiple */
+.an-bulkbar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 0.75rem;
+    background: #2c2c2c;
+    color: #f5f0e8;
+    font-family: var(--sans);
+    font-size: 0.68rem;
+}
+.an-bulkbar select {
+    padding: 0.4rem 0.6rem;
+    font-family: var(--sans);
+    font-size: 0.68rem;
+    border: 1px solid #555;
+    background: #3a3a3a;
+    color: #f5f0e8;
+}
+.an-bulkbar button {
+    background: var(--accent, #8a6d3b);
+    color: #fff;
+    border: none;
+    padding: 0.4rem 1rem;
+    font-family: var(--sans);
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.an-bulkbar button:disabled { opacity: 0.4; cursor: not-allowed; }
+.an-bulkbar #bulk-count { opacity: 0.75; margin-right: auto; }
 </style>
 @endpush
 
@@ -218,6 +252,10 @@
       <div class="n" style="color:#713f12;">{{ $stats['borradores'] }}</div>
       <div class="l">Borradores</div>
     </div>
+    <div class="an-stat">
+      <div class="n" style="color:#4c1d95;">{{ $stats['destacadas'] }}</div>
+      <div class="l">Preferentes</div>
+    </div>
   </div>
 
   {{-- ── Barra de filtros ── --}}
@@ -238,6 +276,12 @@
       <option value="privado"    @selected(request('permiso') === 'privado')>Privado</option>
     </select>
 
+    <select name="destacada">
+      <option value="">Destacadas y normales</option>
+      <option value="1000" @selected(request('destacada') === '1000')>Solo preferentes</option>
+      <option value="0"    @selected(request('destacada') === '0')>Solo automáticas</option>
+    </select>
+
     <select name="orden">
       <option value="fecha_desc" @selected(request('orden','fecha_desc') === 'fecha_desc')>Más reciente</option>
       <option value="fecha_asc"  @selected(request('orden') === 'fecha_asc')>Más antigua</option>
@@ -248,7 +292,7 @@
 
     <button type="submit" class="f-btn"><i class="bi bi-search"></i> Buscar</button>
 
-    @if(request()->hasAny(['q','estado','permiso','orden']))
+    @if(request()->hasAny(['q','estado','permiso','destacada','orden']))
       <a href="{{ route('admin.narraciones.index') }}" class="f-reset">Limpiar</a>
     @endif
   </form>
@@ -262,6 +306,29 @@
 
   {{-- ── Tabla ── --}}
   @if($narraciones->count() > 0)
+
+    {{-- Acciones masivas --}}
+    <form id="bulk-form" method="POST"
+          action="{{ route('admin.narraciones.bulk') }}?{{ http_build_query(request()->query()) }}"
+          onsubmit="return confirmBulk(event)">
+      @csrf
+      <div class="an-bulkbar">
+        <span id="bulk-count">0 seleccionadas</span>
+        <select name="action" id="bulk-action">
+          <option value="">Elegir acción…</option>
+          <option value="estado:publicado">Marcar como Publicado</option>
+          <option value="estado:promocion">Marcar como Promoción</option>
+          <option value="estado:borrador">Marcar como Borrador</option>
+          <option value="destacada:1000">Marcar como Preferente</option>
+          <option value="destacada:0">Quitar Preferente</option>
+          <option value="permiso:publico">Marcar como Público</option>
+          <option value="permiso:seguidores">Marcar como Solo suscriptores</option>
+          <option value="delete">Eliminar</option>
+        </select>
+        <button type="submit" id="bulk-apply" disabled>Aplicar</button>
+      </div>
+    </form>
+
     <div style="overflow-x:auto;">
       <table class="an-table">
         <thead>
@@ -270,6 +337,9 @@
               $cur = request('orden','fecha_desc');
               $qs  = fn($p) => request()->fullUrlWithQuery(array_merge($p, ['page'=>1]));
             @endphp
+            <th style="width:2rem; text-align:center;">
+              <input type="checkbox" id="check-all" onchange="toggleAllChecks(this)">
+            </th>
             <th style="width:38%;">
               @if($cur === 'titulo_asc')
                 <a href="{{ $qs(['orden'=>'titulo_desc']) }}">Título ↑</a>
@@ -281,6 +351,7 @@
             </th>
             <th>Estado</th>
             <th>Permiso</th>
+            <th style="text-align:center;">Destacado</th>
             <th>
               @if($cur === 'fecha_asc')
                 <a href="{{ $qs(['orden'=>'fecha_desc']) }}">Fecha ↑</a>
@@ -301,6 +372,10 @@
         <tbody>
           @foreach($narraciones as $narracion)
           <tr>
+            <td style="text-align:center;">
+              <input type="checkbox" class="row-check" name="ids[]" value="{{ $narracion->id }}"
+                     form="bulk-form" onchange="updateBulkCount()">
+            </td>
             <td>
               <span class="an-title-strong">{{ $narracion->titulo }}</span>
               <span class="an-snippet">{{ Str::limit(strip_tags($narracion->contenido), 90) }}</span>
@@ -319,6 +394,13 @@
                 @case('privado')    <span class="badge b-priv">Privado</span>     @break
               @endswitch
             </td>
+            <td style="text-align:center;">
+              @if($narracion->orden == 1000)
+                <span class="badge b-prom" title="Aparece primero en portada">★ Preferente</span>
+              @else
+                <span style="color:#b0a898; font-size:0.65rem;">—</span>
+              @endif
+            </td>
             <td style="white-space:nowrap; font-size:0.72rem; color:#7a6f63;">
               {{ $narracion->fecha_publicacion->format('d/m/Y') }}
             </td>
@@ -335,6 +417,15 @@
                    class="an-action an-edit">
                   <i class="bi bi-pencil"></i> Editar
                 </a>
+                <form action="{{ route('admin.narraciones.toggleDestacada', $narracion->slug) }}?{{ http_build_query(request()->query()) }}"
+                      method="POST" style="display:inline;">
+                  @csrf
+                  @method('PATCH')
+                  <button type="submit" class="an-action an-ver"
+                          title="{{ $narracion->orden == 1000 ? 'Quitar de preferentes' : 'Marcar como preferente' }}">
+                    <i class="bi {{ $narracion->orden == 1000 ? 'bi-star-fill' : 'bi-star' }}"></i>
+                  </button>
+                </form>
                 <form action="{{ route('admin.narraciones.destroy', $narracion->slug) }}"
                       method="POST" style="display:inline;"
                       onsubmit="return confirm('¿Eliminar «{{ addslashes($narracion->titulo) }}»?\nEsta acción no se puede deshacer.')">
@@ -395,4 +486,29 @@
   </div>
 
 </main>
+
+<script>
+function toggleAllChecks(el) {
+  document.querySelectorAll('.row-check').forEach(cb => cb.checked = el.checked);
+  updateBulkCount();
+}
+function updateBulkCount() {
+  const checks  = document.querySelectorAll('.row-check');
+  const checked = document.querySelectorAll('.row-check:checked').length;
+  document.getElementById('bulk-count').textContent =
+    checked + (checked === 1 ? ' seleccionada' : ' seleccionadas');
+  document.getElementById('bulk-apply').disabled = checked === 0;
+  document.getElementById('check-all').checked = checked > 0 && checked === checks.length;
+}
+function confirmBulk(e) {
+  const checked = document.querySelectorAll('.row-check:checked').length;
+  const action  = document.getElementById('bulk-action').value;
+  if (checked === 0) { e.preventDefault(); return false; }
+  if (!action) { e.preventDefault(); alert('Elige una acción.'); return false; }
+  if (action === 'delete') {
+    return confirm('¿Eliminar ' + checked + ' narración(es)?\nEsta acción no se puede deshacer.');
+  }
+  return true;
+}
+</script>
 @endsection

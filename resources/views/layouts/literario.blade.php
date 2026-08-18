@@ -320,6 +320,49 @@
         color: var(--ink-soft);
       }
 
+      /* ── LISTADO (índice) ── */
+      .stories-list {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 3rem;
+        border-top: 1px solid var(--parchment-dark);
+      }
+      .story-row {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        padding: 0.9rem 0.25rem;
+        border-bottom: 1px solid var(--parchment-dark);
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .story-row:hover { background: #fff; }
+      .row-num {
+        font-family: var(--serif);
+        font-size: 0.85rem;
+        color: var(--parchment-dark);
+        width: 2rem;
+        flex-shrink: 0;
+      }
+      .row-title {
+        font-family: var(--serif);
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--ink);
+        flex: 1;
+        line-height: 1.4;
+      }
+      .row-title i { font-size: 0.75rem; margin-left: 0.4rem; color: var(--accent); }
+      .row-date {
+        font-family: var(--sans);
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
       /* ── MODAL ── */
       .modal-overlay {
         display: none;

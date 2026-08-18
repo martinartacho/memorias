@@ -56,10 +56,10 @@ class NarracionController extends Controller
         $hoy           = now()->toDateString();
         $q             = trim($request->input('q', ''));
 
-        // Base: publicado + promocion, ordenado por fecha
+        // Base: publicado + promocion
         // Las fechas futuras se muestran a todos como teaser (el contenido
         // queda bloqueado hasta la fecha; ver show())
-        $query = Narracion::visible()->orderByFecha();
+        $query = Narracion::visible();
 
         // Filtro de permiso_lectura según rol
         if ($esAdmin) {
@@ -75,6 +75,15 @@ class NarracionController extends Controller
             $query->where('titulo', 'like', '%' . $q . '%');
         }
 
+        // Ordenación
+        $orden = $request->input('orden', 'fecha_desc');
+        match ($orden) {
+            'fecha_asc'   => $query->orderBy('fecha_publicacion', 'asc'),
+            'titulo_asc'  => $query->orderBy('titulo', 'asc'),
+            'titulo_desc' => $query->orderBy('titulo', 'desc'),
+            default       => $query->orderBy('fecha_publicacion', 'desc'),
+        };
+
         // Narración destacada: solo cuando no hay búsqueda activa
         $featured = null;
         if ($q === '') {
@@ -86,7 +95,7 @@ class NarracionController extends Controller
                 ->first();
         }
 
-        $narraciones = $query->paginate(6)->withQueryString();
+        $narraciones = $query->paginate(50)->withQueryString();
 
         // Títulos ocultos para visitantes anónimos (teaser de seguidores)
         $ocultas = collect();
@@ -99,7 +108,7 @@ class NarracionController extends Controller
         }
 
         return view('narraciones.index-literario',
-            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas', 'q'));
+            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas', 'q', 'orden'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -445,6 +454,11 @@ class NarracionController extends Controller
             $query->where('permiso_lectura', $permiso);
         }
 
+        // Filtro por destacada (orden = 1000 preferente / 0 automático)
+        if ($request->filled('destacada')) {
+            $query->where('orden', $request->input('destacada'));
+        }
+
         // Ordenación
         match ($request->input('orden', 'fecha_desc')) {
             'fecha_asc'   => $query->orderBy('fecha_publicacion', 'asc'),
@@ -464,6 +478,7 @@ class NarracionController extends Controller
             'publicadas' => (clone $baseStats)->where('estado', 'publicado')->count(),
             'borradores' => (clone $baseStats)->where('estado', 'borrador')->count(),
             'promocion'  => (clone $baseStats)->where('estado', 'promocion')->count(),
+            'destacadas' => (clone $baseStats)->where('orden', 1000)->count(),
         ];
 
         $narraciones = $query->paginate(20)->withQueryString();
@@ -566,6 +581,59 @@ class NarracionController extends Controller
 
         return redirect()->route('admin.narraciones.index')
             ->with('success', 'Narración eliminada correctamente.');
+    }
+
+    public function toggleDestacada($slug)
+    {
+        $narracion = Narracion::where('slug', $slug)->firstOrFail();
+        $this->autorizarEdicion($narracion);
+
+        $narracion->orden = $narracion->orden == 1000 ? 0 : 1000;
+        $narracion->save();
+
+        return redirect()->route('admin.narraciones.index', request()->query())
+            ->with('success', $narracion->orden == 1000
+                ? 'Narración marcada como preferente.'
+                : 'Narración vuelve a orden automático.');
+    }
+
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'ids'    => 'required|array|min:1',
+            'ids.*'  => 'integer',
+            'action' => 'required|in:estado:publicado,estado:promocion,estado:borrador,destacada:1000,destacada:0,permiso:publico,permiso:seguidores,delete',
+        ]);
+
+        $user  = auth()->user();
+        $query = Narracion::whereIn('id', $request->ids);
+        if ($user->isEditor()) {
+            $query->where('user_id', $user->id);
+        }
+
+        [$tipo, $valor] = array_pad(explode(':', $request->action, 2), 2, null);
+
+        if ($tipo === 'estado') {
+            $n = $query->update(['estado' => $valor]);
+            $mensaje = "{$n} narración(es) actualizadas a estado «{$valor}».";
+        } elseif ($tipo === 'destacada') {
+            $n = $query->update(['orden' => (int) $valor]);
+            $mensaje = $valor == 1000
+                ? "{$n} narración(es) marcadas como preferentes."
+                : "{$n} narración(es) vueltas a orden automático.";
+        } elseif ($tipo === 'permiso') {
+            $n = $query->update(['permiso_lectura' => $valor]);
+            $mensaje = $valor === 'seguidores'
+                ? "{$n} narración(es) marcadas como solo suscriptores."
+                : "{$n} narración(es) marcadas como público.";
+        } else {
+            $n = $query->count();
+            $query->delete();
+            $mensaje = "{$n} narración(es) eliminadas.";
+        }
+
+        return redirect()->route('admin.narraciones.index', request()->query())
+            ->with('success', $mensaje);
     }
 
     public function autosave(Request $request)
