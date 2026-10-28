@@ -117,12 +117,16 @@ class NarracionController extends Controller
 
     public function show(Request $request, $slug)
     {
-        // Buscar en publicado + promocion
+        $esAdmin = $this->esAdmin();
+
+        // Visitantes: publicado + promocion. El admin también puede previsualizar borradores.
         $narracion = Narracion::where('slug', $slug)
-            ->visible()
+            ->when(!$esAdmin, fn ($query) => $query->visible())
             ->firstOrFail();
 
-        $esAdmin = $this->esAdmin();
+        if (!in_array($narracion->estado, ['publicado', 'promocion'], true)) {
+            $this->autorizarEdicion($narracion);
+        }
 
         $esSubscriptor = $this->esSubscritorVerificado($request);
         $hoy           = now()->toDateString();
