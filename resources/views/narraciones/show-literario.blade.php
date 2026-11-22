@@ -273,6 +273,16 @@
     {{-- Columna derecha: contenido --}}
     <div class="featured-text">
 
+      @if(session('serie_aviso'))
+        <div role="alert" style="font-family:var(--sans); font-size:0.85rem; color:var(--ink); background:var(--parchment-mid); border-left:3px solid var(--accent); padding:0.75rem 1rem; margin-bottom:1.2rem;">
+          {{ session('serie_aviso') }}
+        </div>
+      @endif
+
+      @if(!empty($capitulo))
+        <div class="featured-author" style="margin-bottom:0.6rem;">Capítulo {{ $capitulo }}</div>
+      @endif
+
       {{-- Línea de fecha + permiso --}}
       <div class="featured-author" style="display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap;">
         <span>Publicado · {{ $narracion->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</span>
@@ -602,6 +612,23 @@
                              transition:border-color 0.2s, color 0.2s;">
                 👎 <span id="count-dislike">{{ $narracion->count_dislikes }}</span>
               </button>
+            </div>
+          @endif
+
+          @if(!empty($anterior) || !empty($siguiente))
+            <div style="flex-basis:100%; display:flex; flex-direction:column; gap:0.5rem; font-family:var(--sans); font-size:0.8rem;">
+              @if(!empty($anterior))
+                <a href="{{ route('narraciones.show', $anterior->slug) }}" style="color:var(--accent); text-decoration:none;">← Capítulo anterior: {{ $anterior->titulo }}</a>
+              @endif
+              @if(!empty($siguiente))
+                <a id="serie-siguiente" href="{{ route('narraciones.show', $siguiente->slug) }}"
+                   style="color:var(--accent); text-decoration:none; font-weight:600; {{ ($miVoto !== null || $esAdmin) ? '' : 'display:none;' }}">
+                  Siguiente capítulo: {{ $siguiente->titulo }} →
+                </a>
+                @if($miVoto === null && !$esAdmin && $narracion->estado === 'publicado' && !$esFutura)
+                  <span id="serie-aviso-voto" style="color:var(--ink-muted);">Para seguir con el siguiente capítulo, valora este con 👍 o 👎.</span>
+                @endif
+              @endif
             </div>
           @endif
 
@@ -1252,11 +1279,15 @@ function compartirEnllac(url, btnId) {
   const btnDislike = document.getElementById('btn-dislike');
   if (!btnLike || !btnDislike) return;
 
-  // Restaurar estado visual si ya votó en esta sesión
-  const votoGuardado = localStorage.getItem(VOTED_KEY);
+  // Estado visual: el voto que conoce el servidor manda; si no, el guardado en este navegador
+  const votoServidor = @json($miVoto ?? null);
+  const votoGuardado = votoServidor || localStorage.getItem(VOTED_KEY);
   if (votoGuardado) aplicarEstadoVotado(votoGuardado);
 
   function aplicarEstadoVotado(tipo) {
+    const sig = document.getElementById('serie-siguiente');
+    if (sig) sig.style.display = '';
+    document.getElementById('serie-aviso-voto')?.remove();
     const btn = tipo === 'like' ? btnLike : btnDislike;
     btn.style.borderColor = tipo === 'like' ? '#16a34a' : '#dc2626';
     btn.style.color       = tipo === 'like' ? '#16a34a' : '#dc2626';

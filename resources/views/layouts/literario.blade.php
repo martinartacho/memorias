@@ -531,11 +531,6 @@
         .featured h2 { font-size: 1.5rem; }
         .modal-header, .modal-body { padding: 1.5rem; }
         .modal-title { font-size: 1.6rem; }
-        .container { padding: 1.5rem 1rem; }
-        .header-inner { padding: 2rem 1rem 1.75rem; }
-        nav ul { padding: 0 1rem; flex-wrap: wrap; justify-content: center; }
-        .featured-meta { padding: 1.25rem; }
-        .featured-text { padding: 1.5rem 1.25rem; }
       }
 
       /* ── NARRACIÓN: el texto pegado desde Google Docs / Word trae estilos propios ── */

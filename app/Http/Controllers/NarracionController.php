@@ -6,8 +6,11 @@ use App\Models\Narracion;
 use App\Models\NarracionComment;
 use App\Models\NarracionReaction;
 use App\Models\Subscriber;
+use App\Support\SerieOrden;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Mpdf\Mpdf;
 use Mpdf\MpdfException;
 
@@ -23,6 +26,46 @@ class NarracionController extends Controller
     private function esSubscritorVerificado(Request $request): bool
     {
         return Subscriber::tokenIsValid($request->cookie('subscriber_token'));
+    }
+
+    /** Identificador de quien vota: mismo criterio para votar y para comprobar que ya votó. */
+    private function identificadorVotante(Request $request): string
+    {
+        if ($this->esAdmin() || auth()->check()) {
+            return 'u:' . auth()->id();
+        }
+
+        if ($this->esSubscritorVerificado($request)) {
+            return 's:' . $request->cookie('subscriber_token');
+        }
+
+        return 'ip:' . md5($request->ip() . $request->userAgent());
+    }
+
+    private function haValorado(Request $request, Narracion $narracion): bool
+    {
+        return NarracionReaction::where('narracion_id', $narracion->id)
+            ->where('identifier', $this->identificadorVotante($request))
+            ->exists();
+    }
+
+    /** Capítulo anterior/siguiente, número de capítulo y voto propio, para la vista de una narración. */
+    private function datosSerie(Request $request, Narracion $narracion, bool $esAdmin): array
+    {
+        $visibles = fn () => Narracion::visible()
+            ->when(!$esAdmin, fn ($q) => $q->where('permiso_lectura', '!=', 'privado'));
+
+        $anterior  = $narracion->after_id ? $visibles()->find($narracion->after_id) : null;
+        $siguiente = $visibles()->where('after_id', $narracion->id)->first();
+
+        return [
+            'anterior'  => $anterior,
+            'siguiente' => $siguiente,
+            'capitulo'  => ($anterior || $siguiente) ? SerieOrden::numeroDeCapitulo($narracion) : null,
+            'miVoto'    => NarracionReaction::where('narracion_id', $narracion->id)
+                ->where('identifier', $this->identificadorVotante($request))
+                ->value('tipo'),
+        ];
     }
 
     /**
@@ -90,12 +133,25 @@ class NarracionController extends Controller
             $featured = Narracion::publicado()
                 ->where('permiso_lectura', 'publico')
                 ->where('fecha_publicacion', '<=', $hoy)
+                ->whereNull('after_id')
                 ->orderBy('orden', 'desc')
                 ->orderByFecha()
                 ->first();
         }
 
-        $narraciones = $query->paginate(50)->withQueryString();
+        if (Narracion::whereNotNull('after_id')->exists()) {
+            $todas = SerieOrden::agrupar($query->get());
+            $pagina = max(1, (int) $request->input('page', 1));
+            $narraciones = new LengthAwarePaginator(
+                $todas->forPage($pagina, 50)->values(),
+                $todas->count(),
+                50,
+                $pagina,
+                ['path' => $request->url(), 'query' => $request->query()],
+            );
+        } else {
+            $narraciones = $query->paginate(50)->withQueryString();
+        }
 
         // Títulos ocultos para visitantes anónimos (teaser de seguidores)
         $ocultas = collect();
@@ -157,10 +213,12 @@ class NarracionController extends Controller
                 ->first()
             : null;
 
+        $serie = $this->datosSerie($request, $narracion, $esAdmin);
+
         // Admin ve todo sin restricciones
         if ($esAdmin) {
             return view('narraciones.show-literario',
-                compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'));
+                array_merge(compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'), $serie));
         }
 
         // Privadas: nunca accesibles públicamente
@@ -182,14 +240,26 @@ class NarracionController extends Controller
         // (no contabilizar lectura)
         if ($esFutura) {
             return view('narraciones.show-literario',
-                compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'));
+                array_merge(compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'), $serie));
+        }
+
+        // Serie por capítulos: para seguir hay que haber valorado (👍 o 👎) el capítulo anterior
+        if ($narracion->after_id && $narracion->estado === 'publicado') {
+            $previo = Narracion::publicado()
+                ->where('fecha_publicacion', '<=', $hoy)
+                ->find($narracion->after_id);
+
+            if ($previo && !$this->haValorado($request, $previo)) {
+                return redirect()->route('narraciones.show', $previo->slug)
+                    ->with('serie_aviso', 'Para seguir con el siguiente capítulo, valora primero este con 👍 o 👎.');
+            }
         }
 
         // Promocion: acceso permitido pero contenido limitado en la vista
         $narracion->increment('count_read');
 
         return view('narraciones.show-literario',
-            compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'));
+            array_merge(compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'), $serie));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -287,16 +357,7 @@ class NarracionController extends Controller
             ->firstOrFail();
 
         // Construir identificador único del votante
-        $esAdmin       = $this->esAdmin();
-        $esSubscriptor = $this->esSubscritorVerificado($request);
-
-        if ($esAdmin || auth()->check()) {
-            $identifier = 'u:' . auth()->id();
-        } elseif ($esSubscriptor) {
-            $identifier = 's:' . $request->cookie('subscriber_token');
-        } else {
-            $identifier = 'ip:' . md5($request->ip() . $request->userAgent());
-        }
+        $identifier = $this->identificadorVotante($request);
 
         // Intentar insertar; si ya existe (unique constraint) → ya votó
         $yaVotado = NarracionReaction::where('narracion_id', $narracion->id)
@@ -502,7 +563,7 @@ class NarracionController extends Controller
 
     public function create()
     {
-        return view('admin.narraciones.create-literario');
+        return view('admin.narraciones.create-literario', ['candidatas' => SerieOrden::candidatas()]);
     }
 
     public function store(Request $request)
@@ -513,8 +574,9 @@ class NarracionController extends Controller
             'fecha_publicacion' => 'required|date',
             'estado'            => 'required|in:borrador,publicado,promocion',
             'orden'             => 'nullable|integer|in:0,1000',
+            'after_id'          => ['nullable', 'integer', 'exists:narracions,id', 'unique:narracions,after_id'],
             'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
-        ]);
+        ], ['after_id.unique' => 'Esa narración ya tiene un capítulo siguiente.']);
 
         // Corrección automática de estado: publicado + fecha futura → promocion
         // (evita saltarse el sistema de autopublicación y notificaciones)
@@ -524,6 +586,7 @@ class NarracionController extends Controller
         }
 
         Narracion::create([
+            'after_id'          => $request->after_id ?: null,
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'slug'              => $this->uniqueSlug($request->titulo),
@@ -556,7 +619,7 @@ class NarracionController extends Controller
     {
         $narracion = Narracion::where('slug', $slug)->firstOrFail();
         $this->autorizarEdicion($narracion);
-        return view('admin.narraciones.edit-literario', compact('narracion'));
+        return view('admin.narraciones.edit-literario', ['narracion' => $narracion, 'candidatas' => SerieOrden::candidatas($narracion)]);
     }
 
     public function update(Request $request, $slug)
@@ -570,8 +633,13 @@ class NarracionController extends Controller
             'fecha_publicacion' => 'required|date',
             'estado'            => 'required|in:borrador,publicado,promocion',
             'orden'             => 'nullable|integer|in:0,1000',
+            'after_id'          => ['nullable', 'integer', 'exists:narracions,id', Rule::unique('narracions', 'after_id')->ignore($narracion->id)],
             'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
-        ]);
+        ], ['after_id.unique' => 'Esa narración ya tiene un capítulo siguiente.']);
+
+        if ($request->filled('after_id') && in_array((int) $request->after_id, SerieOrden::descendientes($narracion), true)) {
+            return back()->withInput()->withErrors(['after_id' => 'No puede ir después de sí misma ni de uno de sus propios capítulos siguientes.']);
+        }
 
         // Corrección automática de estado: publicado + fecha futura → promocion
         $estado = $request->estado;
@@ -580,6 +648,7 @@ class NarracionController extends Controller
         }
 
         $narracion->update([
+            'after_id'          => $request->after_id ?: null,
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'fecha_publicacion' => $request->fecha_publicacion,
