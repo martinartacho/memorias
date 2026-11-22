@@ -532,6 +532,16 @@
         .modal-header, .modal-body { padding: 1.5rem; }
         .modal-title { font-size: 1.6rem; }
       }
+
+      /* ── NARRACIÓN: el texto pegado desde Google Docs / Word trae estilos propios ── */
+      .featured, .featured > * { min-width: 0; }
+      #narracion-content { overflow-wrap: anywhere; }
+      #narracion-content * { max-width: 100%; box-sizing: border-box; }
+      #narracion-content span { white-space: normal !important; }
+      #narracion-content p { margin-bottom: 0.9em !important; }
+      #narracion-content img, #narracion-content video, #narracion-content iframe { height: auto; }
+      #narracion-content table { display: block; overflow-x: auto; }
+      #narracion-content pre { white-space: pre-wrap; }
     </style>
     @stack('styles')
 </head>

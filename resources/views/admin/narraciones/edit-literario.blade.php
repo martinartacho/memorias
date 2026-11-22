@@ -396,6 +396,26 @@
           @enderror
         </div>
 
+        <!-- Serie por capítulos -->
+        <div>
+          <label for="after_id" class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-3">
+            Va después de (serie por capítulos)
+          </label>
+          <select id="after_id" name="after_id"
+                  class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-sans">
+            <option value="">— Ninguna (narración suelta o capítulo 1) —</option>
+            @foreach($candidatas as $c)
+              <option value="{{ $c->id }}" {{ old('after_id', $narracion->after_id) == $c->id ? 'selected' : '' }}>{{ $c->titulo }}</option>
+            @endforeach
+          </select>
+          <p class="mt-2 text-sm text-stone-500 font-sans">
+            Si la eliges, esta narración será el capítulo siguiente: en el listado aparece justo después y el lector debe valorar (👍 o 👎) el anterior para seguir.
+          </p>
+          @error('after_id')
+            <p class="mt-2 text-sm text-red-600 font-sans">{{ $message }}</p>
+          @enderror
+        </div>
+
         <!-- Permiso de lectura -->
         <div>
           <label class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-3">

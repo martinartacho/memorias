@@ -18,6 +18,7 @@ class Narracion extends Model
         'estado',
         'user_id',
         'orden',
+        'after_id',
         'permiso_lectura',
         'count_feedback',
         'count_dislikes',
@@ -99,6 +100,18 @@ class Narracion extends Model
               ->orWhere('permiso_lectura', 'seguidores')
               ->orWhere('user_id', $user->id);
         });
+    }
+
+    /** Capítulo anterior de la serie (null = suelta o capítulo 1) */
+    public function anterior()
+    {
+        return $this->belongsTo(Narracion::class, 'after_id');
+    }
+
+    /** Capítulo siguiente de la serie */
+    public function siguiente()
+    {
+        return $this->hasOne(Narracion::class, 'after_id');
     }
 
     public function scopeByOrden($query, $direction = 'asc')
