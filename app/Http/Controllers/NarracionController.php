@@ -122,7 +122,17 @@ class NarracionController extends Controller
         // Visitantes: publicado + promocion. El admin también puede previsualizar borradores.
         $narracion = Narracion::where('slug', $slug)
             ->when(!$esAdmin, fn ($query) => $query->visible())
-            ->firstOrFail();
+            ->first();
+
+        if (!$narracion) {
+            $sinNumero = preg_replace('/-\d{9,}$/', '', $slug);
+
+            if ($sinNumero !== $slug && Narracion::where('slug', $sinNumero)->when(!$esAdmin, fn ($query) => $query->visible())->exists()) {
+                return redirect()->route('narraciones.show', $sinNumero, 301);
+            }
+
+            abort(404);
+        }
 
         if (!in_array($narracion->estado, ['publicado', 'promocion'], true)) {
             $this->autorizarEdicion($narracion);
@@ -516,7 +526,7 @@ class NarracionController extends Controller
         Narracion::create([
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
-            'slug'              => Str::slug($request->titulo) . '-' . time(),
+            'slug'              => $this->uniqueSlug($request->titulo),
             'fecha_publicacion' => $request->fecha_publicacion,
             'estado'            => $estado,
             'user_id'           => auth()->id(),
@@ -528,6 +538,18 @@ class NarracionController extends Controller
 
         return redirect()->route('admin.narraciones.index')
             ->with('success', 'Narración creada correctamente.');
+    }
+
+    private function uniqueSlug(string $titulo): string
+    {
+        $base = Str::slug($titulo) ?: 'narracion';
+        $slug = $base;
+
+        for ($i = 2; Narracion::where('slug', $slug)->exists(); $i++) {
+            $slug = $base . '-' . $i;
+        }
+
+        return $slug;
     }
 
     public function edit($slug)
