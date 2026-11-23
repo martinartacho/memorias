@@ -61,7 +61,7 @@ class SerieCapitulosTest extends TestCase
 
     public function test_el_siguiente_capitulo_exige_valorar_el_anterior(): void
     {
-        $uno = $this->narracion('Cap uno');
+        $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);
         $dos = $this->narracion('Cap dos', ['after_id' => $uno->id]);
 
         $this->get(route('narraciones.show', $dos->slug))
@@ -75,16 +75,45 @@ class SerieCapitulosTest extends TestCase
 
     public function test_el_voto_de_otra_persona_no_abre_el_capitulo(): void
     {
-        $uno = $this->narracion('Cap uno');
+        $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);
         $dos = $this->narracion('Cap dos', ['after_id' => $uno->id]);
         NarracionReaction::create(['narracion_id' => $uno->id, 'identifier' => 'ip:otra-persona', 'tipo' => 'like']);
 
         $this->get(route('narraciones.show', $dos->slug))->assertRedirect(route('narraciones.show', $uno->slug));
     }
 
-    public function test_el_admin_no_necesita_valorar(): void
+    public function test_sin_la_casilla_el_siguiente_capitulo_se_abre_sin_valorar(): void
     {
         $uno = $this->narracion('Cap uno');
+        $dos = $this->narracion('Cap dos', ['after_id' => $uno->id]);
+
+        $this->assertFalse($uno->fresh()->pide_valoracion);
+        $this->get(route('narraciones.show', $dos->slug))->assertOk()->assertSee('Texto de Cap dos');
+        $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('valora este con');
+    }
+
+    public function test_la_invitacion_a_suscribirse_sale_solo_si_el_siguiente_es_de_seguidores(): void
+    {
+        $uno = $this->narracion('Cap uno');
+        $this->narracion('Cap dos', ['after_id' => $uno->id, 'permiso_lectura' => 'seguidores']);
+
+        $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertSee('serie-invitacion', false);
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('serie-invitacion', false);
+    }
+
+    public function test_sin_siguiente_de_seguidores_no_hay_invitacion(): void
+    {
+        $uno = $this->narracion('Cap uno');
+        $this->narracion('Cap dos', ['after_id' => $uno->id]);
+
+        $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('serie-invitacion', false);
+    }
+
+    public function test_el_admin_no_necesita_valorar(): void
+    {
+        $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);
         $dos = $this->narracion('Cap dos', ['after_id' => $uno->id]);
 
         $this->actingAs(User::factory()->create(['role' => 'admin']))

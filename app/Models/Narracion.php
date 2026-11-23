@@ -19,6 +19,7 @@ class Narracion extends Model
         'user_id',
         'orden',
         'after_id',
+        'pide_valoracion',
         'permiso_lectura',
         'count_feedback',
         'count_dislikes',
@@ -27,6 +28,7 @@ class Narracion extends Model
 
     protected $casts = [
         'fecha_publicacion' => 'date',
+        'pide_valoracion'   => 'boolean',
     ];
 
     /** Solo estado=publicado (admin, featured, etc.) */

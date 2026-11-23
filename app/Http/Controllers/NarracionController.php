@@ -243,13 +243,13 @@ class NarracionController extends Controller
                 array_merge(compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'), $serie));
         }
 
-        // Serie por capítulos: para seguir hay que haber valorado (👍 o 👎) el capítulo anterior
+        // Serie por capítulos: si el capítulo anterior lo pide, hay que haberlo valorado (👍 o 👎)
         if ($narracion->after_id && $narracion->estado === 'publicado') {
             $previo = Narracion::publicado()
                 ->where('fecha_publicacion', '<=', $hoy)
                 ->find($narracion->after_id);
 
-            if ($previo && !$this->haValorado($request, $previo)) {
+            if ($previo && $previo->pide_valoracion && !$this->haValorado($request, $previo)) {
                 return redirect()->route('narraciones.show', $previo->slug)
                     ->with('serie_aviso', 'Para seguir con el siguiente capítulo, valora primero este con 👍 o 👎.');
             }
@@ -587,6 +587,7 @@ class NarracionController extends Controller
 
         Narracion::create([
             'after_id'          => $request->after_id ?: null,
+            'pide_valoracion'   => $request->boolean('pide_valoracion'),
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'slug'              => $this->uniqueSlug($request->titulo),
@@ -649,6 +650,7 @@ class NarracionController extends Controller
 
         $narracion->update([
             'after_id'          => $request->after_id ?: null,
+            'pide_valoracion'   => $request->boolean('pide_valoracion'),
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'fecha_publicacion' => $request->fecha_publicacion,
