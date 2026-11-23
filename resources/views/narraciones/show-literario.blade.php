@@ -628,17 +628,6 @@
                 @if($narracion->pide_valoracion && $miVoto === null && !$esAdmin && $narracion->estado === 'publicado' && !$esFutura)
                   <span id="serie-aviso-voto" style="color:var(--ink-muted);">Para seguir con el siguiente capítulo, valora este con 👍 o 👎.</span>
                 @endif
-                @if($siguiente->permiso_lectura === 'seguidores' && !($esSubscriptor ?? false) && !($esAdmin ?? false))
-                  <div id="serie-invitacion" style="margin-top:0.75rem; padding:1rem 1.25rem; border:1px solid var(--parchment-dark); background:var(--parchment);">
-                    <p style="margin:0 0 0.75rem; color:var(--ink); line-height:1.6;">
-                      La historia sigue. Los siguientes capítulos son para suscriptores: suscríbete gratis y te aviso cuando salga cada uno.
-                    </p>
-                    <a href="{{ route('suscripcion.form', ['slug' => $narracion->slug]) }}"
-                       style="display:inline-block; background:var(--accent); color:var(--parchment); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; padding:0.65rem 1.5rem; text-decoration:none;">
-                      Suscribirme para seguir →
-                    </a>
-                  </div>
-                @endif
               @endif
             </div>
           @endif
@@ -675,7 +664,20 @@
             </div>
           @endif
 
+
         </div>
+
+        @if(!empty($siguiente) && $siguiente->permiso_lectura === 'seguidores' && !($esSubscriptor ?? false) && !($esAdmin ?? false))
+          <div id="serie-invitacion" style="flex-basis:100%; box-sizing:border-box; width:100%; margin-top:1.25rem; padding:1rem 1.1rem; border:1px solid var(--parchment-dark); background:var(--parchment); font-family:var(--sans);">
+            <p style="margin:0 0 0.85rem; font-size:0.9rem; color:var(--ink); line-height:1.55;">
+              La historia sigue. Los siguientes capítulos son para suscriptores: suscríbete gratis y te aviso cuando salga cada uno.
+            </p>
+            <a href="{{ route('suscripcion.form', ['slug' => $narracion->slug]) }}"
+               style="display:block; text-align:center; background:var(--accent); color:var(--parchment); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; padding:0.75rem 1rem; text-decoration:none;">
+              Suscribirme para seguir →
+            </a>
+          </div>
+        @endif
       </div>
 
     </div>
