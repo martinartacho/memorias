@@ -409,11 +409,17 @@
             @endforeach
           </select>
           <p class="mt-2 text-sm text-stone-500 font-sans">
-            Si la eliges, esta narración será el capítulo siguiente: en el listado aparece justo después y el lector debe valorar (👍 o 👎) el anterior para seguir.
+            Si la eliges, esta narración será el capítulo siguiente: en el listado aparece justo después del anterior.
           </p>
           @error('after_id')
             <p class="mt-2 text-sm text-red-600 font-sans">{{ $message }}</p>
           @enderror
+
+          <label class="mt-4 flex items-start gap-3 font-sans text-sm text-stone-700 cursor-pointer">
+            <input type="checkbox" name="pide_valoracion" value="1" class="mt-1"
+                   {{ old('pide_valoracion', $narracion->pide_valoracion) ? 'checked' : '' }}>
+            <span>Pedir valoración (👍 o 👎) de esta narración para abrir el capítulo siguiente.</span>
+          </label>
         </div>
 
         <!-- Permiso de lectura -->

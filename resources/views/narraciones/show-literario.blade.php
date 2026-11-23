@@ -622,10 +622,10 @@
               @endif
               @if(!empty($siguiente))
                 <a id="serie-siguiente" href="{{ route('narraciones.show', $siguiente->slug) }}"
-                   style="color:var(--accent); text-decoration:none; font-weight:600; {{ ($miVoto !== null || $esAdmin) ? '' : 'display:none;' }}">
+                   style="color:var(--accent); text-decoration:none; font-weight:600; {{ (!$narracion->pide_valoracion || $miVoto !== null || $esAdmin) ? '' : 'display:none;' }}">
                   Siguiente capítulo: {{ $siguiente->titulo }} →
                 </a>
-                @if($miVoto === null && !$esAdmin && $narracion->estado === 'publicado' && !$esFutura)
+                @if($narracion->pide_valoracion && $miVoto === null && !$esAdmin && $narracion->estado === 'publicado' && !$esFutura)
                   <span id="serie-aviso-voto" style="color:var(--ink-muted);">Para seguir con el siguiente capítulo, valora este con 👍 o 👎.</span>
                 @endif
               @endif
