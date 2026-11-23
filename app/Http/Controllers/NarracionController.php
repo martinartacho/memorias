@@ -9,6 +9,7 @@ use App\Models\Subscriber;
 use App\Support\SerieOrden;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Mpdf\Mpdf;
@@ -256,7 +257,15 @@ class NarracionController extends Controller
         }
 
         // Promocion: acceso permitido pero contenido limitado en la vista
-        $narracion->increment('count_read');
+        // Lectura única por visitante: recargar o volver a abrir no suma
+        $nuevaLectura = DB::table('narracion_lecturas')->insertOrIgnore([
+            'narracion_id' => $narracion->id,
+            'identifier'   => $this->identificadorVotante($request),
+            'created_at'   => now(),
+        ]);
+        if ($nuevaLectura) {
+            $narracion->increment('count_read');
+        }
 
         return view('narraciones.show-literario',
             array_merge(compact('narracion', 'esAdmin', 'esSubscriptor', 'esFutura', 'subscriber', 'comentarios', 'miComentario'), $serie));
