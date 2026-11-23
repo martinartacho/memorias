@@ -522,7 +522,7 @@
       <div style="margin-top:2.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; border-top:1px solid var(--parchment-dark); padding-top:1.5rem;">
         <a href="{{ route('narraciones.index') }}" class="read-more">← Volver a narraciones</a>
 
-        <div style="display:flex; align-items:center; gap:1.5rem;">
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:1rem 1.5rem;">
 
           {{-- Descarga PDF: solo suscriptores/admins, narración publicada y sin fecha futura --}}
           @if(($esSubscriptor || $esAdmin) && $narracion->estado === 'publicado' && !$esFutura)
@@ -616,7 +616,7 @@
           @endif
 
           @if(!empty($anterior) || !empty($siguiente))
-            <div style="flex-basis:100%; display:flex; flex-direction:column; gap:0.5rem; font-family:var(--sans); font-size:0.8rem;">
+            <div style="flex-basis:100%; order:3; display:flex; flex-direction:column; gap:0.5rem; font-family:var(--sans); font-size:0.8rem;">
               @if(!empty($anterior))
                 <a href="{{ route('narraciones.show', $anterior->slug) }}" style="color:var(--accent); text-decoration:none;">← Capítulo anterior: {{ $anterior->titulo }}</a>
               @endif

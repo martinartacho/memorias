@@ -111,6 +111,29 @@ class SerieCapitulosTest extends TestCase
         $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('serie-invitacion', false);
     }
 
+    public function test_recargar_no_suma_lecturas_pero_otro_visitante_si(): void
+    {
+        $uno = $this->narracion('Cap uno');
+
+        $this->get(route('narraciones.show', $uno->slug))->assertOk();
+        $this->get(route('narraciones.show', $uno->slug))->assertOk();
+        $this->assertSame(1, $uno->fresh()->count_read);
+
+        $this->withHeader('User-Agent', 'otro-navegador')
+            ->get(route('narraciones.show', $uno->slug))->assertOk();
+        $this->assertSame(2, $uno->fresh()->count_read);
+    }
+
+    public function test_el_admin_no_suma_lecturas(): void
+    {
+        $uno = $this->narracion('Cap uno');
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('narraciones.show', $uno->slug))->assertOk();
+
+        $this->assertSame(0, $uno->fresh()->count_read);
+    }
+
     public function test_el_admin_no_necesita_valorar(): void
     {
         $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);
