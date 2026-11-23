@@ -92,6 +92,25 @@ class SerieCapitulosTest extends TestCase
         $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('valora este con');
     }
 
+    public function test_la_invitacion_a_suscribirse_sale_solo_si_el_siguiente_es_de_seguidores(): void
+    {
+        $uno = $this->narracion('Cap uno');
+        $this->narracion('Cap dos', ['after_id' => $uno->id, 'permiso_lectura' => 'seguidores']);
+
+        $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertSee('serie-invitacion', false);
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('serie-invitacion', false);
+    }
+
+    public function test_sin_siguiente_de_seguidores_no_hay_invitacion(): void
+    {
+        $uno = $this->narracion('Cap uno');
+        $this->narracion('Cap dos', ['after_id' => $uno->id]);
+
+        $this->get(route('narraciones.show', $uno->slug))->assertOk()->assertDontSee('serie-invitacion', false);
+    }
+
     public function test_el_admin_no_necesita_valorar(): void
     {
         $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);
