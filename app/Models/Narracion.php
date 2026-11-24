@@ -13,6 +13,7 @@ class Narracion extends Model
     protected $fillable = [
         'titulo',
         'contenido',
+        'sinopsis',
         'slug',
         'fecha_publicacion',
         'estado',

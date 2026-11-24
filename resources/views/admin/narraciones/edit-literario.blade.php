@@ -420,6 +420,15 @@
                    {{ old('pide_valoracion', $narracion->pide_valoracion) ? 'checked' : '' }}>
             <span>Pedir valoración (👍 o 👎) de esta narración para abrir el capítulo siguiente.</span>
           </label>
+
+          <div class="mt-4">
+            <label for="sinopsis" class="block font-sans text-xs tracking-wider uppercase text-stone-600 mb-2">
+              Sinopsis de la serie (solo en el capítulo 1)
+            </label>
+            <textarea id="sinopsis" name="sinopsis" rows="4" maxlength="1500"
+                      class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 font-sans">{{ old('sinopsis', $narracion->sinopsis) }}</textarea>
+            <p class="mt-1 text-sm text-stone-500 font-sans">Aparece en la tarjeta destacada y en la página de la serie. Si la dejas vacía se usa el arranque del capítulo.</p>
+          </div>
         </div>
 
         <!-- Permiso de lectura -->

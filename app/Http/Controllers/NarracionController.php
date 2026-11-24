@@ -168,23 +168,29 @@ class NarracionController extends Controller
         // Capítulos 1 de series con más de un capítulo: llevan el enlace «Ver toda la serie»
         $primerosDeSerie = Narracion::whereNotNull('after_id')->pluck('after_id')->all();
 
+        // Si el destacado es el capítulo 1 de una serie, la tarjeta presenta la serie entera
+        $destacadaSerie = null;
+        if ($featured && in_array($featured->id, $primerosDeSerie, true)) {
+            $capitulosSerie = $this->capitulosDeSerie($featured, $esAdmin);
+            if ($capitulosSerie->count() > 1) {
+                $destacadaSerie = $this->presentacionDeSerie($capitulosSerie->first()) + [
+                    'capitulos' => $capitulosSerie,
+                    'leidas'    => $this->capitulosLeidos($request, $capitulosSerie),
+                ];
+            }
+        }
+
         return view('narraciones.index-literario',
-            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas', 'q', 'orden', 'primerosDeSerie'));
+            compact('narraciones', 'featured', 'destacadaSerie', 'esSubscriptor', 'esAdmin', 'ocultas', 'q', 'orden', 'primerosDeSerie'));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Página de una serie por capítulos
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function serie(Request $request, string $slug)
+    /** Capítulos visibles de la serie a la que pertenece esta narración, en orden (desde el primero). */
+    private function capitulosDeSerie(Narracion $narracion, bool $esAdmin): \Illuminate\Support\Collection
     {
-        $esAdmin = $this->esAdmin();
         $hoy = now()->toDateString();
         $visibles = fn () => Narracion::publicado()
             ->where('fecha_publicacion', '<=', $hoy)
             ->when(!$esAdmin, fn ($q) => $q->where('permiso_lectura', '!=', 'privado'));
-
-        $narracion = $visibles()->where('slug', $slug)->firstOrFail();
 
         // Subir hasta el primer capítulo y bajar por los siguientes
         $raiz = $narracion;
@@ -206,6 +212,48 @@ class NarracionController extends Controller
         $visiblesIds = $visibles()->whereIn('id', $capitulos->pluck('id'))->pluck('id')->all();
         $capitulos = $capitulos->filter(fn (Narracion $n) => in_array($n->id, $visiblesIds, true))->values();
 
+        return $capitulos;
+    }
+
+    /** Capítulos ya leídos por esta persona (cookie del navegador + registro de lecturas). */
+    private function capitulosLeidos(Request $request, \Illuminate\Support\Collection $capitulos): array
+    {
+        $leidas = array_filter(array_map('intval', explode(',', (string) $request->cookie('narraciones_leidas'))));
+        $leidas = array_merge($leidas, DB::table('narracion_lecturas')
+            ->where('identifier', $this->identificadorVotante($request))
+            ->whereIn('narracion_id', $capitulos->pluck('id'))
+            ->pluck('narracion_id')->all());
+
+        return array_values(array_unique($leidas));
+    }
+
+    /** Título de la serie y sinopsis (la escrita en el capítulo 1 o, si no hay, el arranque del texto). */
+    private function presentacionDeSerie(Narracion $primero): array
+    {
+        $resumen = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(str_replace(['</p>', '</h3>', '</h2>', '<br>', '<br/>'], ' ', (string) $primero->contenido)))));
+
+        return [
+            'tituloSerie' => trim((string) preg_replace('/\.?\s*Cap[ií]tulo\s*\d+.*$/iu', '', $primero->titulo)) ?: $primero->titulo,
+            'resumen'     => filled($primero->sinopsis) ? trim($primero->sinopsis) : Str::limit($resumen, 380),
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Página de una serie por capítulos
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function serie(Request $request, string $slug)
+    {
+        $esAdmin = $this->esAdmin();
+        $hoy = now()->toDateString();
+        $visibles = fn () => Narracion::publicado()
+            ->where('fecha_publicacion', '<=', $hoy)
+            ->when(!$esAdmin, fn ($q) => $q->where('permiso_lectura', '!=', 'privado'));
+
+        $narracion = $visibles()->where('slug', $slug)->firstOrFail();
+
+        $capitulos = $this->capitulosDeSerie($narracion, $esAdmin);
+
         if ($capitulos->count() < 2) {
             return redirect()->route('narraciones.show', $slug);
         }
@@ -213,20 +261,10 @@ class NarracionController extends Controller
         $primero = $capitulos->first();
         $esSubscriptor = $this->esSubscritorVerificado($request);
 
-        $leidas = array_filter(array_map('intval', explode(',', (string) $request->cookie('narraciones_leidas'))));
-        $leidas = array_merge($leidas, DB::table('narracion_lecturas')
-            ->where('identifier', $this->identificadorVotante($request))
-            ->whereIn('narracion_id', $capitulos->pluck('id'))
-            ->pluck('narracion_id')->all());
-
-        $resumen = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(str_replace(['</p>', '</h3>', '</h2>', '<br>', '<br/>'], ' ', (string) $primero->contenido)))));
-
-        return view('narraciones.serie-literario', [
-            'tituloSerie'   => trim((string) preg_replace('/\.?\s*Cap[ií]tulo\s*\d+.*$/iu', '', $primero->titulo)) ?: $primero->titulo,
-            'resumen'       => Str::limit($resumen, 380),
+        return view('narraciones.serie-literario', $this->presentacionDeSerie($primero) + [
             'capitulos'     => $capitulos,
             'primero'       => $primero,
-            'leidas'        => array_values(array_unique($leidas)),
+            'leidas'        => $this->capitulosLeidos($request, $capitulos),
             'lecturas'      => $capitulos->sum('count_read'),
             'esSubscriptor' => $esSubscriptor,
             'esAdmin'       => $esAdmin,
@@ -654,6 +692,7 @@ class NarracionController extends Controller
             'estado'            => 'required|in:borrador,publicado,promocion',
             'orden'             => 'nullable|integer|in:0,1000',
             'after_id'          => ['nullable', 'integer', 'exists:narracions,id', 'unique:narracions,after_id'],
+            'sinopsis'          => 'nullable|string|max:1500',
             'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
         ], ['after_id.unique' => 'Esa narración ya tiene un capítulo siguiente.']);
 
@@ -667,6 +706,7 @@ class NarracionController extends Controller
         Narracion::create([
             'after_id'          => $request->after_id ?: null,
             'pide_valoracion'   => $request->boolean('pide_valoracion'),
+            'sinopsis'          => filled($request->sinopsis) ? trim($request->sinopsis) : null,
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'slug'              => $this->uniqueSlug($request->titulo),
@@ -714,6 +754,7 @@ class NarracionController extends Controller
             'estado'            => 'required|in:borrador,publicado,promocion',
             'orden'             => 'nullable|integer|in:0,1000',
             'after_id'          => ['nullable', 'integer', 'exists:narracions,id', Rule::unique('narracions', 'after_id')->ignore($narracion->id)],
+            'sinopsis'          => 'nullable|string|max:1500',
             'permiso_lectura'   => 'nullable|in:publico,seguidores,privado',
         ], ['after_id.unique' => 'Esa narración ya tiene un capítulo siguiente.']);
 
@@ -730,6 +771,7 @@ class NarracionController extends Controller
         $narracion->update([
             'after_id'          => $request->after_id ?: null,
             'pide_valoracion'   => $request->boolean('pide_valoracion'),
+            'sinopsis'          => filled($request->sinopsis) ? trim($request->sinopsis) : null,
             'titulo'            => $request->titulo,
             'contenido'         => $request->contenido,
             'fecha_publicacion' => $request->fecha_publicacion,
