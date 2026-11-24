@@ -134,6 +134,46 @@ class SerieCapitulosTest extends TestCase
         $this->assertSame(0, $uno->fresh()->count_read);
     }
 
+    public function test_la_pagina_de_la_serie_lista_los_capitulos_y_marca_los_leidos(): void
+    {
+        $uno = $this->narracion('Linaje. Capitulo 1 — La encina', ['fecha_publicacion' => now()->subDays(3)]);
+        $dos = $this->narracion('Linaje. Capitulo 2 — El camino', ['after_id' => $uno->id, 'fecha_publicacion' => now()->subDays(2)]);
+        $tres = $this->narracion('Linaje. Capitulo 3 — Burgos', ['after_id' => $dos->id, 'permiso_lectura' => 'seguidores', 'fecha_publicacion' => now()->subDay()]);
+
+        $this->get(route('narraciones.serie', $dos->slug))->assertOk()
+            ->assertSee('Linaje')
+            ->assertSee('La encina')
+            ->assertSee('El camino')
+            ->assertSee('3 capítulos')
+            ->assertSee('Avísame del siguiente')
+            ->assertDontSee('✓ leído');
+
+        $this->get(route('narraciones.show', $uno->slug))->assertOk()
+            ->assertCookie('narraciones_leidas', (string) $uno->id);
+
+        $this->withCookie('narraciones_leidas', (string) $uno->id)
+            ->get(route('narraciones.serie', $uno->slug))->assertOk()
+            ->assertSee('✓ leído')
+            ->assertSee('leídos 1 de 3')
+            ->assertSee('Seguir leyendo');
+    }
+
+    public function test_una_narracion_suelta_no_tiene_pagina_de_serie(): void
+    {
+        $suelta = $this->narracion('Suelta');
+
+        $this->get(route('narraciones.serie', $suelta->slug))->assertRedirect(route('narraciones.show', $suelta->slug));
+    }
+
+    public function test_el_listado_y_el_capitulo_enlazan_a_toda_la_serie(): void
+    {
+        $uno = $this->narracion('Cap uno', ['fecha_publicacion' => now()->subDays(2)]);
+        $dos = $this->narracion('Cap dos', ['after_id' => $uno->id, 'fecha_publicacion' => now()->subDay()]);
+
+        $this->get('/narraciones')->assertOk()->assertSee(route('narraciones.serie', $uno->slug), false);
+        $this->get(route('narraciones.show', $dos->slug))->assertOk()->assertSee('Ver toda la serie');
+    }
+
     public function test_el_admin_no_necesita_valorar(): void
     {
         $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);

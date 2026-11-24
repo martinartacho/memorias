@@ -111,6 +111,12 @@
           </span>
 
         </a>
+        @if(!$narracion->after_id && in_array($narracion->id, $primerosDeSerie, true))
+          <a href="{{ route('narraciones.serie', $narracion->slug) }}"
+             style="display:block; margin:-0.35rem 0 0.9rem 3.2rem; font-family:var(--sans); font-size:0.62rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); text-decoration:none;">
+            Ver toda la serie →
+          </a>
+        @endif
       @endforeach
     </div>
 

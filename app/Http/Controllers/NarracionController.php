@@ -9,6 +9,7 @@ use App\Models\Subscriber;
 use App\Support\SerieOrden;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -164,8 +165,72 @@ class NarracionController extends Controller
                 ->pluck('titulo');
         }
 
+        // Capítulos 1 de series con más de un capítulo: llevan el enlace «Ver toda la serie»
+        $primerosDeSerie = Narracion::whereNotNull('after_id')->pluck('after_id')->all();
+
         return view('narraciones.index-literario',
-            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas', 'q', 'orden'));
+            compact('narraciones', 'featured', 'esSubscriptor', 'esAdmin', 'ocultas', 'q', 'orden', 'primerosDeSerie'));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Página de una serie por capítulos
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function serie(Request $request, string $slug)
+    {
+        $esAdmin = $this->esAdmin();
+        $hoy = now()->toDateString();
+        $visibles = fn () => Narracion::publicado()
+            ->where('fecha_publicacion', '<=', $hoy)
+            ->when(!$esAdmin, fn ($q) => $q->where('permiso_lectura', '!=', 'privado'));
+
+        $narracion = $visibles()->where('slug', $slug)->firstOrFail();
+
+        // Subir hasta el primer capítulo y bajar por los siguientes
+        $raiz = $narracion;
+        $vistos = [$raiz->id];
+        while ($raiz->after_id && ($padre = Narracion::find($raiz->after_id)) && !in_array($padre->id, $vistos, true)) {
+            $raiz = $padre;
+            $vistos[] = $padre->id;
+        }
+
+        $capitulos = collect();
+        $actual = $raiz;
+        $puestos = [];
+        while ($actual && !isset($puestos[$actual->id])) {
+            $puestos[$actual->id] = true;
+            $capitulos->push($actual);
+            $actual = Narracion::where('after_id', $actual->id)->first();
+        }
+
+        $visiblesIds = $visibles()->whereIn('id', $capitulos->pluck('id'))->pluck('id')->all();
+        $capitulos = $capitulos->filter(fn (Narracion $n) => in_array($n->id, $visiblesIds, true))->values();
+
+        if ($capitulos->count() < 2) {
+            return redirect()->route('narraciones.show', $slug);
+        }
+
+        $primero = $capitulos->first();
+        $esSubscriptor = $this->esSubscritorVerificado($request);
+
+        $leidas = array_filter(array_map('intval', explode(',', (string) $request->cookie('narraciones_leidas'))));
+        $leidas = array_merge($leidas, DB::table('narracion_lecturas')
+            ->where('identifier', $this->identificadorVotante($request))
+            ->whereIn('narracion_id', $capitulos->pluck('id'))
+            ->pluck('narracion_id')->all());
+
+        $resumen = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(str_replace(['</p>', '</h3>', '</h2>', '<br>', '<br/>'], ' ', (string) $primero->contenido)))));
+
+        return view('narraciones.serie-literario', [
+            'tituloSerie'   => trim((string) preg_replace('/\.?\s*Cap[ií]tulo\s*\d+.*$/iu', '', $primero->titulo)) ?: $primero->titulo,
+            'resumen'       => Str::limit($resumen, 380),
+            'capitulos'     => $capitulos,
+            'primero'       => $primero,
+            'leidas'        => array_values(array_unique($leidas)),
+            'lecturas'      => $capitulos->sum('count_read'),
+            'esSubscriptor' => $esSubscriptor,
+            'esAdmin'       => $esAdmin,
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -257,6 +322,11 @@ class NarracionController extends Controller
         }
 
         // Promocion: acceso permitido pero contenido limitado en la vista
+        // Marca de «leído» en este navegador para la página de la serie
+        $leidasCookie = array_filter(array_map('intval', explode(',', (string) $request->cookie('narraciones_leidas'))));
+        $leidasCookie[] = $narracion->id;
+        Cookie::queue('narraciones_leidas', implode(',', array_slice(array_unique($leidasCookie), -300)), 60 * 24 * 365);
+
         // Lectura única por visitante: recargar o volver a abrir no suma
         $nuevaLectura = DB::table('narracion_lecturas')->insertOrIgnore([
             'narracion_id' => $narracion->id,

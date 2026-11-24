@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [NarracionController::class, 'index'])->name('home');
 Route::get('/narraciones', [NarracionController::class, 'index'])->name('narraciones.index');
 Route::get('/narracion/{slug}', [NarracionController::class, 'show'])->name('narraciones.show');
+Route::get('/serie/{slug}', [NarracionController::class, 'serie'])->name('narraciones.serie');
 Route::get('/narracion/{slug}/descargar', [NarracionController::class, 'downloadPdf'])->name('narraciones.pdf');
 Route::post('/narracion/{slug}/reaccion', [NarracionController::class, 'react'])->name('narraciones.react');
 Route::post('/narracion/{slug}/comentario', [NarracionController::class, 'comment'])->name('narraciones.comment');

@@ -617,6 +617,7 @@
 
           @if(!empty($anterior) || !empty($siguiente))
             <div style="flex-basis:100%; order:3; display:flex; flex-direction:column; gap:0.5rem; font-family:var(--sans); font-size:0.8rem;">
+              <a href="{{ route('narraciones.serie', $narracion->slug) }}" style="color:var(--ink-muted); text-decoration:none; letter-spacing:0.12em; text-transform:uppercase; font-size:0.7rem;">Ver toda la serie</a>
               @if(!empty($anterior))
                 <a href="{{ route('narraciones.show', $anterior->slug) }}" style="color:var(--accent); text-decoration:none;">← Capítulo anterior: {{ $anterior->titulo }}</a>
               @endif
