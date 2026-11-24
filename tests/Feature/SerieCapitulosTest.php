@@ -174,6 +174,42 @@ class SerieCapitulosTest extends TestCase
         $this->get(route('narraciones.show', $dos->slug))->assertOk()->assertSee('Ver toda la serie');
     }
 
+    public function test_el_destacado_presenta_la_serie_con_su_sinopsis_y_capitulos(): void
+    {
+        $uno = $this->narracion('Linaje. Capitulo 1 — La encina', ['sinopsis' => 'Un niño, una encina y un camino.', 'fecha_publicacion' => now()->subDays(2)]);
+        $this->narracion('Linaje. Capitulo 2 — El camino', ['after_id' => $uno->id, 'fecha_publicacion' => now()->subDay()]);
+
+        $this->get('/narraciones')->assertOk()
+            ->assertSee('Serie · 2 capítulos')
+            ->assertSee('Un niño, una encina y un camino.')
+            ->assertSee('La encina')
+            ->assertSee('El camino')
+            ->assertSee('Empezar a leer')
+            ->assertSee(route('narraciones.serie', $uno->slug), false);
+
+        $this->withCookie('narraciones_leidas', (string) $uno->id)
+            ->get('/narraciones')->assertOk()->assertSee('✓ leído')->assertSee('Seguir leyendo');
+    }
+
+    public function test_el_destacado_de_una_narracion_suelta_sigue_igual(): void
+    {
+        $this->narracion('Suelta destacada');
+
+        $this->get('/narraciones')->assertOk()->assertSee('Leer narración')->assertDontSee('Serie ·');
+    }
+
+    public function test_la_sinopsis_se_guarda_desde_el_editor(): void
+    {
+        $uno = $this->narracion('Cap uno');
+
+        $this->actingAs($this->autor)->put(route('admin.narraciones.update', $uno->slug), [
+            'titulo' => 'Cap uno', 'contenido' => '<p>Texto</p>', 'fecha_publicacion' => now()->subDay()->toDateString(),
+            'estado' => 'publicado', 'sinopsis' => 'Una sinopsis.',
+        ])->assertRedirect();
+
+        $this->assertSame('Una sinopsis.', $uno->fresh()->sinopsis);
+    }
+
     public function test_el_admin_no_necesita_valorar(): void
     {
         $uno = $this->narracion('Cap uno', ['pide_valoracion' => true]);

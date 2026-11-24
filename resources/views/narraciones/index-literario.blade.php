@@ -7,20 +7,58 @@
 
   {{-- ── DESTACADO (solo en página 1) ── --}}
   @if($featured && $narraciones->currentPage() === 1)
-    <div class="featured">
-      <div class="featured-meta">
-        <div class="section-label">Destacado</div>
-        <div class="featured-number">{{ str_pad($featured->id, 2, '0', STR_PAD_LEFT) }}</div>
-        <div class="featured-category">Narración · {{ $featured->fecha_publicacion->format('Y') }}</div>
+    @if(!empty($destacadaSerie))
+      @php
+        $capsSerie = $destacadaSerie['capitulos'];
+        $leidasSerie = $destacadaSerie['leidas'];
+        $siguienteSerie = $capsSerie->first(fn ($c) => ! in_array($c->id, $leidasSerie, true)) ?? $capsSerie->first();
+        $algunLeido = count(array_intersect($leidasSerie, $capsSerie->pluck('id')->all())) > 0;
+      @endphp
+      <div class="featured">
+        <div class="featured-meta">
+          <div class="section-label">Destacado</div>
+          <div class="featured-number">{{ str_pad($featured->id, 2, '0', STR_PAD_LEFT) }}</div>
+          <div class="featured-category">Serie · {{ $capsSerie->count() }} capítulos</div>
+        </div>
+        <div class="featured-divider"></div>
+        <div class="featured-text">
+          <div class="featured-author">Serie · desde el {{ $featured->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</div>
+          <h2>{{ $destacadaSerie['tituloSerie'] }}</h2>
+          <p class="dropcap" style="white-space:pre-line;">{{ $destacadaSerie['resumen'] }}</p>
+
+          <div style="margin:1.25rem 0 1.5rem; border-top:1px solid var(--parchment-dark);">
+            @foreach($capsSerie as $i => $cap)
+              <a href="{{ route('narraciones.show', $cap->slug) }}"
+                 style="display:flex; align-items:baseline; gap:0.8rem; padding:0.6rem 0; border-bottom:1px solid var(--parchment-dark); text-decoration:none; color:var(--ink);">
+                <span style="font-family:var(--sans); font-size:0.65rem; letter-spacing:0.12em; color:var(--ink-muted); min-width:1.6rem;">{{ str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                <span style="flex:1; font-family:var(--serif); font-size:1rem; line-height:1.4;">{{ trim((string) preg_replace('/^.*?Cap[ií]tulo\s*\d+\s*[—–-]\s*/iu', '', $cap->titulo)) ?: $cap->titulo }}</span>
+                @if(in_array($cap->id, $leidasSerie, true))
+                  <span style="font-family:var(--sans); font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:#16a34a;">✓ leído</span>
+                @endif
+              </a>
+            @endforeach
+          </div>
+
+          <a href="{{ route('narraciones.show', $siguienteSerie->slug) }}" class="read-more">{{ $algunLeido ? 'Seguir leyendo' : 'Empezar a leer' }} →</a>
+          <a href="{{ route('narraciones.serie', $featured->slug) }}" class="read-more" style="margin-left:1.5rem;">Ver toda la serie →</a>
+        </div>
       </div>
-      <div class="featured-divider"></div>
-      <div class="featured-text">
-        <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</div>
-        <h2>{{ Str::limit(strip_tags($featured->titulo), 60) }}</h2>
-        <p class="dropcap">{{ Str::limit(strip_tags($featured->contenido), 280) }}</p>
-        <a href="{{ route('narraciones.show', $featured->slug) }}" class="read-more">Leer narración →</a>
+    @else
+      <div class="featured">
+        <div class="featured-meta">
+          <div class="section-label">Destacado</div>
+          <div class="featured-number">{{ str_pad($featured->id, 2, '0', STR_PAD_LEFT) }}</div>
+          <div class="featured-category">Narración · {{ $featured->fecha_publicacion->format('Y') }}</div>
+        </div>
+        <div class="featured-divider"></div>
+        <div class="featured-text">
+          <div class="featured-author">Publicado · {{ $featured->fecha_publicacion->translatedFormat('j \d\e F \d\e Y') }}</div>
+          <h2>{{ Str::limit(strip_tags($featured->titulo), 60) }}</h2>
+          <p class="dropcap">{{ Str::limit(strip_tags($featured->contenido), 280) }}</p>
+          <a href="{{ route('narraciones.show', $featured->slug) }}" class="read-more">Leer narración →</a>
+        </div>
       </div>
-    </div>
+    @endif
   @endif
 
   {{-- ── BUSCADOR ── --}}
